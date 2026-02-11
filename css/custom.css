@@ -1,0 +1,36 @@
+/* 1. 引入霞鹜文楷的在线字体，确保没安装字体的访客也能看到 */
+@import url('https://npm.elemecdn.com/lxgw-wenkai-screen-webfont@1.1.0/style.css');
+
+/* 2. 定义全局文章正文样式 */
+#article-container {
+    font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
+}
+
+/* 3. 如果你也希望文章的标题（H1-H6）使用该字体 */
+#article-container h1, 
+#article-container h2, 
+#article-container h3, 
+#article-container h4, 
+#article-container h5, 
+#article-container h6 {
+    font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
+}
+
+/* 针对安知鱼首页文章卡片标题的精准强化 */
+#recent-posts > .recent-post-item .recent-post-info .article-title {
+    font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
+    font-size: 1.6rem !important;     /* 调大字号 */
+    font-weight: 850 !important;       /* 极粗 */
+    line-height: 1.5 !important;
+    -webkit-line-clamp: 2 !important; /* 限制最多显示两行，防止标题过长撑破卡片 */
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+
+/* 针对标题链接的颜色和字体装饰（有些主题样式是写在 a 标签上的） */
+#recent-posts > .recent-post-item .recent-post-info > a.article-title {
+    color: var(--text-highlight-color) !important;
+    text-decoration: none !important;
+    font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
+}
