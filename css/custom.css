@@ -34,3 +34,21 @@
     text-decoration: none !important;
     font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
 }
+
+/* 强制在移动端显示左下角音乐球 */
+@media screen and (max-width: 768px) {
+  #nav-music {
+    display: flex !important; /* 确保容器可见 */
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 90; /* 确保不被其他层遮挡 */
+  }
+
+  /* 针对 MetingJS 的播放器样式微调 */
+  #nav-music meting-js {
+    display: block !important;
+  }
+}
