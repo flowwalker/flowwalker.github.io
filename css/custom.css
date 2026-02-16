@@ -69,3 +69,31 @@
     50% { transform: rotate(5deg); }
     100% { transform: rotate(-5deg); }
 }
+
+/* --- 春节气氛微调套装 --- */
+
+/* 1. 全局边缘红润感（像灯笼照亮了屏幕边缘） */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    box-shadow: inset 0 0 80px rgba(231, 76, 60, 0.12);
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* 2. 浅色模式下背景不再死白，变得暖洋洋 */
+[data-theme="light"] {
+    background-color: #fff9f9 !important; 
+}
+
+/* 3. 让原本蓝色的滚动条也变红 */
+::-webkit-scrollbar-thumb {
+    background-color: #e74c3c !important;
+}
+
+/* 4. 修改文章选中文字的颜色，变成红色背景白色字 */
+::selection {
+    background: #e74c3c;
+    color: #fff;
+}
