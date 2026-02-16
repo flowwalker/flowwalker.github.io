@@ -37,3 +37,35 @@
 
 
 
+
+/*春节操作*/
+/* 春节期间强制红色主题 */
+:root {
+    --anzhiyu-main: #e74c3c !important; /* 主色调改为中国红 */
+    --anzhiyu-theme: #e74c3c !important;
+    --anzhiyu-hover-light: #ff5e4d !important;
+    --anzhiyu-mask-bg: rgba(231, 76, 60, 0.6) !important;
+}
+
+/* 添加一个灯笼挂件的样式 */
+/* 灯笼容器布局 */
+.lantern-box {
+    position: fixed;
+    top: -10px; /* 根据图片实际情况微调 */
+    z-index: 1000;
+    pointer-events: none;
+}
+.lantern-box.left { left: 20px; }
+.lantern-box.right { right: 20px; }
+
+.lantern-box img {
+    width: 100px; /* 控制灯笼大小 */
+    animation: lanternSwing 3s infinite ease-in-out;
+    transform-origin: top center;
+}
+
+@keyframes lanternSwing {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+}
