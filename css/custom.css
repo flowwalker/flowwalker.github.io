@@ -4,6 +4,8 @@
 /* 2. 定义全局文章正文样式 */
 #article-container {
     font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
+    font-size: 20px !important;  /* 调大正文字号，默认是 16px，可按需改为 18px、20px 等 */
+    line-height: 2 !important;   /* 行高也可适当调大，提升阅读舒适度 */
 }
 
 /* 3. 如果你也希望文章的标题（H1-H6）使用该字体 */
@@ -19,7 +21,7 @@
 /* 针对安知鱼首页文章卡片标题的精准强化 */
 #recent-posts > .recent-post-item .recent-post-info .article-title {
     font-family: "Comic Neue", "LXGW WenKai", "霞鹜文楷", "STKaiti", "Microsoft YaHei", sans-serif !important;
-    font-size: 1.6rem !important;     /* 调大字号 */
+    font-size: 1.8rem !important;     /* 调大字号 */
     font-weight: 850 !important;       /* 极粗 */
     line-height: 1.5 !important;
     -webkit-line-clamp: 2 !important; /* 限制最多显示两行，防止标题过长撑破卡片 */
