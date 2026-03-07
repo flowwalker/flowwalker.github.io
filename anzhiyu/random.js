@@ -1,3 +1,3 @@
-var posts=["2026/02/10/GitHub/","2026/02/12/Amazons/","2026/02/07/Changanke/","2026/03/02/HexoDeploy/","2026/02/13/Lag/","2026/03/02/UseDeepseek'sAPI/","2026/02/11/hello-world/","2026/03/02/introduction/","2026/02/12/once_ideal/","2026/03/02/search_papers/","2026/02/16/“小龙”年年终总结/","2026/02/12/shortcuts/"];function toRandomPost(){
+var posts=["2026/02/12/Amazons/","2026/02/07/Changanke/","2026/02/10/GitHub/","2026/02/13/Lag/","2026/03/02/HexoDeploy/","2026/03/03/Lesson1/","2026/03/02/UseDeepseek'sAPI/","2026/02/11/hello-world/","2026/03/02/introduction/","2026/02/12/once_ideal/","2026/03/02/search_papers/","2026/02/12/shortcuts/","2026/02/16/“小龙”年年终总结/","2026/03/07/框架笔记/","2026/03/08/远山夕阳/"];function toRandomPost(){
     pjax.loadUrl('/'+posts[Math.floor(Math.random() * posts.length)]);
   };
