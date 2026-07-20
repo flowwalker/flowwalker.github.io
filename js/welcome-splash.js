@@ -64,14 +64,14 @@
   // 结构说明语
   var STRUCTURE_HTML =
     '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山<br><br>' +
-    '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span>或者直接点击👇周游群山<br>' +
+    '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span><br>或者直接点击👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/">悟道Wiki</a> ' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/physics-notes-blog/">格物Blog</a> ' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/engineering-notes-blog/">工巧Blog</a> ' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/math-notes-blog/">数术Blog</a> ' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/">悟道Wiki</a> ' + '<br>' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/physics-notes-blog/">格物Blog</a> ' + '<br>' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/engineering-notes-blog/">工巧Blog</a> ' + '<br>' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/math-notes-blog/">数术Blog</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/coding-notes-blog/">码艺Blog</a>' +
-    '</span><br><br>' +
+    '</span><br>' +
     '敬请赏玩，㊗️愉快～💐';
   /* ============================================================ */
 
