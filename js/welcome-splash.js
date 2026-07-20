@@ -4,12 +4,11 @@
  * 【开关】把下面 SPLASH_ENABLE 改为 false 即整体关闭；
  *         也可在 _config.anzhiyu.yml 的 inject 中注释掉
  *         welcome-splash.css 与本文件两行。
- * 【图片】把风景图放到 /img/splash/ 下，按时段命名
- *         （morning1.png、morning2.png …），并在下方 IMAGES
- *         对应数组里登记文件名。图片缺失时自动回退为时段渐变色。
- * 【时段】清晨 5–11 时 / 午后 11–17 时 / 黄昏 17–19 时 / 夜晚 19–5 时。
- * 【勾选】勾选“本次访问不再弹出”后：同一设备只要不整页刷新，
- *         本次访问内不再弹出；刷新后即恢复（与需求一致）。
+ * 【图片】风景图放在 /img/splash/ 下，按「时段名+序号.jpg」命名，
+ *         例如 morning1.jpg、dusk3.jpg。
+ *         新增图片后，只需把下方 IMAGES 对应时段的数量改大即可。
+ * 【时段】清晨 5–11 / 午后 11–17 / 黄昏 17–19 / 傍晚 19–22 / 深夜 22–5。
+ * 【兜底】某时段图片缺失或加载失败时，自动回退为该时段的渐变色。
  * ============================================================
  */
 (function () {
@@ -20,12 +19,18 @@
   var ONLY_HOME = false;             // true = 只在首页弹出；false = 进入本站任意页面都弹出
   var IMG_BASE = '/img/splash/';     // 图片目录
 
-  // 各时段图片池：把文件放进 /img/splash/ 后，在这里登记文件名
+  // 各时段图片池：pool('morning', 5) 表示 morning1.jpg ~ morning5.jpg
+  function pool(prefix, count) {
+    var arr = [];
+    for (var i = 1; i <= count; i++) arr.push(prefix + i + '.jpg');
+    return arr;
+  }
   var IMAGES = {
-    morning:   ['morning1.png', 'morning2.png'],
-    afternoon: ['afternoon1.png', 'afternoon2.png'],
-    dusk:      ['dusk1.png', 'dusk2.png'],
-    night:     ['night1.png', 'night2.png']
+    morning:   pool('morning', 5),
+    afternoon: pool('afternoon', 6),
+    dusk:      pool('dusk', 12),
+    evening:   pool('evening', 6),
+    night:     pool('night', 16)
   };
 
   // 各时段古诗词风味欢迎语（随机抽取一条）
@@ -45,6 +50,11 @@
       '疏影横斜水清浅，暗香浮动月黄昏。',
       '夕阳无限好，暮至亦温柔。'
     ],
+    evening: [
+      '月上柳梢头，人约黄昏后。',
+      '天阶夜色凉如水，卧看牵牛织女星。',
+      '华灯初上，夜色温柔，正宜把卷。'
+    ],
     night: [
       '夜静春山空，月出惊山鸟。',
       '吹灯窗更明，月照一天雪。',
@@ -54,8 +64,10 @@
 
   // 结构说明语
   var STRUCTURE_HTML =
-    '此地为笔者 flowwalker 主博客所在山：放眼人间，醉情天地；收录杂文，漫谈随记；每有会意，便欣然忘食～<br>' +
-    '此外笔者另创学习专题博客，收录于上方标题栏「手札」——有悟道、格物、工巧、数术、码艺五录，敬请赏玩。';
+    '⛰️此地为笔者主博客所在山<br>' +
+    '🚀更多专刊详见上方标题栏「手札」<br>' +
+    '——悟道、格物、工巧、数术、码艺<br>' +
+    '💐敬请赏玩，祝愉快～';
   /* ============================================================ */
 
   if (!SPLASH_ENABLE) return;
@@ -66,21 +78,19 @@
     if (path !== '/' && path !== '/index.html') return;
   }
 
-  // 本次访问内已勾选“不再弹出”
-  if (window.__flowwalkerSplashNoMore) return;
-
   function currentPeriod() {
     var h = new Date().getHours();
     if (h >= 5 && h < 11) return 'morning';
     if (h >= 11 && h < 17) return 'afternoon';
     if (h >= 17 && h < 19) return 'dusk';
+    if (h >= 19 && h < 22) return 'evening';
     return 'night';
   }
   function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
   var period = currentPeriod();
-  var pool = IMAGES[period] || [];
-  var imgFile = pool.length ? pickRandom(pool) : null;
+  var files = IMAGES[period] || [];
+  var imgFile = files.length ? pickRandom(files) : null;
   var greeting = pickRandom(GREETINGS[period]);
 
   // 构建浮层 DOM
@@ -90,7 +100,6 @@
   overlay.innerHTML =
     '<div class="ws-card" role="dialog" aria-modal="true" aria-label="欢迎">' +
       '<div class="ws-hero">' +
-        (imgFile ? '<img class="ws-hero-img" src="' + IMG_BASE + imgFile + '" alt="">' : '') +
         '<div class="ws-hero-mask"></div>' +
       '</div>' +
       '<div class="ws-body">' +
@@ -99,10 +108,6 @@
         '<p class="ws-structure">' + STRUCTURE_HTML + '</p>' +
         '<div class="ws-actions">' +
           '<button class="ws-go" type="button">Let&#39;s go!</button>' +
-          '<label class="ws-never">' +
-            '<input type="checkbox" id="ws-never-checkbox">' +
-            '<span>本次访问不再弹出</span>' +
-          '</label>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -111,8 +116,6 @@
   function dismiss() {
     if (closed) return;
     closed = true;
-    var cb = overlay.querySelector('#ws-never-checkbox');
-    if (cb && cb.checked) window.__flowwalkerSplashNoMore = true;
     overlay.classList.add('ws-hide');
     document.removeEventListener('keydown', onEsc);
     setTimeout(function () {
@@ -125,11 +128,21 @@
   overlay.querySelector('.ws-go').addEventListener('click', dismiss);
   document.addEventListener('keydown', onEsc);
 
-  // 图片缺失 → 时段渐变回退
-  var img = overlay.querySelector('.ws-hero-img');
-  if (img) {
-    img.addEventListener('error', function () { overlay.classList.add('ws-noimg'); });
-    if (img.complete && img.naturalWidth === 0) overlay.classList.add('ws-noimg');
+  // 图片预加载：成功才插入 <img>，失败则回退为时段渐变
+  var heroEl = overlay.querySelector('.ws-hero');
+  if (imgFile) {
+    var probe = new Image();
+    probe.onload = function () {
+      var img = document.createElement('img');
+      img.className = 'ws-hero-img';
+      img.src = IMG_BASE + imgFile;
+      img.alt = '';
+      heroEl.insertBefore(img, heroEl.firstChild);
+    };
+    probe.onerror = function () {
+      overlay.classList.add('ws-noimg');
+    };
+    probe.src = IMG_BASE + imgFile;
   } else {
     overlay.classList.add('ws-noimg');
   }
