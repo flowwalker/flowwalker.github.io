@@ -63,90 +63,99 @@
 
   // 结构说明语
   var STRUCTURE_HTML =
-    '⛰️此地为笔者‘主博客’所在之山<br><br>' +
-    '🚀更多专刊详见上方标题栏「手札」<br>' +
-    '——悟道、格物、工巧、数术、码艺<br><br>' +
-    '敬请赏玩，祝愉快～💐';
+    '⛰️此地为笔者「主博客」所在之山<br><br>' +
+    '🚀更多 专刊 详见上方 标题栏「手札」<br>' +
+    '「悟道Wiki」「格物Blog」「工巧Blog」「数术Blog」「码艺Blog」<br><br>' +
+    '敬请赏玩，㊗️愉快～💐';
   /* ============================================================ */
 
-  if (!SPLASH_ENABLE) return;
+  // 等待页面完全加载后再展示浮层
+  function initSplash() {
+    if (!SPLASH_ENABLE) return;
 
-  // 只在首页弹出（可选）
-  if (ONLY_HOME) {
-    var path = window.location.pathname;
-    if (path !== '/' && path !== '/index.html') return;
-  }
+    // 只在首页弹出（可选）
+    if (ONLY_HOME) {
+      var path = window.location.pathname;
+      if (path !== '/' && path !== '/index.html') return;
+    }
 
-  function currentPeriod() {
-    var h = new Date().getHours();
-    if (h >= 5 && h < 11) return 'morning';
-    if (h >= 11 && h < 17) return 'afternoon';
-    if (h >= 17 && h < 19) return 'dusk';
-    if (h >= 19 && h < 22) return 'evening';
-    return 'night';
-  }
-  function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function currentPeriod() {
+      var h = new Date().getHours();
+      if (h >= 5 && h < 11) return 'morning';
+      if (h >= 11 && h < 17) return 'afternoon';
+      if (h >= 17 && h < 19) return 'dusk';
+      if (h >= 19 && h < 22) return 'evening';
+      return 'night';
+    }
+    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  var period = currentPeriod();
-  var files = IMAGES[period] || [];
-  var imgFile = files.length ? pickRandom(files) : null;
-  var greeting = pickRandom(GREETINGS[period]);
+    var period = currentPeriod();
+    var files = IMAGES[period] || [];
+    var imgFile = files.length ? pickRandom(files) : null;
+    var greeting = pickRandom(GREETINGS[period]);
 
-  // 构建浮层 DOM
-  var overlay = document.createElement('div');
-  overlay.id = 'welcome-splash';
-  overlay.className = 'ws-period-' + period;
-  overlay.innerHTML =
-    '<div class="ws-card" role="dialog" aria-modal="true" aria-label="欢迎">' +
-      '<div class="ws-hero">' +
-        '<div class="ws-hero-mask"></div>' +
-      '</div>' +
-      '<div class="ws-body">' +
-        '<h2 class="ws-title">Welcome to flowwalker&#39;s blog!</h2>' +
-        '<p class="ws-greeting">' + greeting + '</p>' +
-        '<p class="ws-structure">' + STRUCTURE_HTML + '</p>' +
-        '<div class="ws-actions">' +
-          '<button class="ws-go" type="button">Let&#39;s go!</button>' +
+    // 构建浮层 DOM
+    var overlay = document.createElement('div');
+    overlay.id = 'welcome-splash';
+    overlay.className = 'ws-period-' + period;
+    overlay.innerHTML =
+      '<div class="ws-card" role="dialog" aria-modal="true" aria-label="欢迎">' +
+        '<div class="ws-hero">' +
+          '<div class="ws-hero-mask"></div>' +
         '</div>' +
-      '</div>' +
-    '</div>';
+        '<div class="ws-body">' +
+          '<h2 class="ws-title">Welcome to flowwalker&#39;s blog!</h2>' +
+          '<p class="ws-greeting">' + greeting + '</p>' +
+          '<p class="ws-structure">' + STRUCTURE_HTML + '</p>' +
+          '<div class="ws-actions">' +
+            '<button class="ws-go" type="button">Let&#39;s go!</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
-  var closed = false;
-  function dismiss() {
-    if (closed) return;
-    closed = true;
-    overlay.classList.add('ws-hide');
-    document.removeEventListener('keydown', onEsc);
-    setTimeout(function () {
-      overlay.remove();
-      document.documentElement.style.overflow = '';
-    }, 600);
-  }
-  function onEsc(e) { if (e.key === 'Escape') dismiss(); }
+    var closed = false;
+    function dismiss() {
+      if (closed) return;
+      closed = true;
+      overlay.classList.add('ws-hide');
+      document.removeEventListener('keydown', onEsc);
+      setTimeout(function () {
+        overlay.remove();
+        document.documentElement.style.overflow = '';
+      }, 600);
+    }
+    function onEsc(e) { if (e.key === 'Escape') dismiss(); }
 
-  overlay.querySelector('.ws-go').addEventListener('click', dismiss);
-  document.addEventListener('keydown', onEsc);
+    overlay.querySelector('.ws-go').addEventListener('click', dismiss);
+    document.addEventListener('keydown', onEsc);
 
-  // 图片预加载：成功才插入 <img>，失败则回退为时段渐变
-  var heroEl = overlay.querySelector('.ws-hero');
-  if (imgFile) {
-    var probe = new Image();
-    probe.onload = function () {
-      var img = document.createElement('img');
-      img.className = 'ws-hero-img';
-      img.src = IMG_BASE + imgFile;
-      img.alt = '';
-      heroEl.insertBefore(img, heroEl.firstChild);
-    };
-    probe.onerror = function () {
+    // 图片预加载：成功才插入 <img>，失败则回退为时段渐变
+    var heroEl = overlay.querySelector('.ws-hero');
+    if (imgFile) {
+      var probe = new Image();
+      probe.onload = function () {
+        var img = document.createElement('img');
+        img.className = 'ws-hero-img';
+        img.src = IMG_BASE + imgFile;
+        img.alt = '';
+        heroEl.insertBefore(img, heroEl.firstChild);
+      };
+      probe.onerror = function () {
+        overlay.classList.add('ws-noimg');
+      };
+      probe.src = IMG_BASE + imgFile;
+    } else {
       overlay.classList.add('ws-noimg');
-    };
-    probe.src = IMG_BASE + imgFile;
-  } else {
-    overlay.classList.add('ws-noimg');
+    }
+
+    document.body.appendChild(overlay);
+    document.documentElement.style.overflow = 'hidden'; // 展示期间锁定滚动
+    requestAnimationFrame(function () { overlay.classList.add('ws-show'); });
   }
 
-  document.body.appendChild(overlay);
-  document.documentElement.style.overflow = 'hidden'; // 展示期间锁定滚动
-  requestAnimationFrame(function () { overlay.classList.add('ws-show'); });
+  if (document.readyState === 'complete') {
+    initSplash();
+  } else {
+    window.addEventListener('load', initSplash);
+  }
 })();
