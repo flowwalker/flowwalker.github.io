@@ -63,7 +63,7 @@
 
   // 结构说明语
   var STRUCTURE_HTML =
-    '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山<br><br>' +
+    '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山<br>' +
     '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span><br>或者直接点击👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/">悟道Wiki</a> ' + '<br>' +
