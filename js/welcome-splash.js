@@ -63,9 +63,15 @@
 
   // 结构说明语
   var STRUCTURE_HTML =
-    '⛰️此地为笔者「主博客」所在之山<br><br>' +
-    '🚀更多 专刊 详见上方 标题栏「手札」<br>' +
-    '「悟道Wiki」「格物Blog」「工巧Blog」「数术Blog」「码艺Blog」<br><br>' +
+    '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山<br><br>' +
+    '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span>：<br>' +
+    '<span class="ws-blog-tags">' +
+      '<span class="ws-blog-tag">悟道Wiki</span> ' +
+      '<span class="ws-blog-tag">格物Blog</span> ' +
+      '<span class="ws-blog-tag">工巧Blog</span> ' +
+      '<span class="ws-blog-tag">数术Blog</span> ' +
+      '<span class="ws-blog-tag">码艺Blog</span>' +
+    '</span><br><br>' +
     '敬请赏玩，㊗️愉快～💐';
   /* ============================================================ */
 
