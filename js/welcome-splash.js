@@ -64,13 +64,13 @@
   // 结构说明语
   var STRUCTURE_HTML =
     '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山<br><br>' +
-    '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span>：<br>' +
+    '📚 更多专刊请见顶部导航栏 <span class="ws-em">「手札」</span>或者直接点击👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
-      '<span class="ws-blog-tag">悟道Wiki</span> ' +
-      '<span class="ws-blog-tag">格物Blog</span> ' +
-      '<span class="ws-blog-tag">工巧Blog</span> ' +
-      '<span class="ws-blog-tag">数术Blog</span> ' +
-      '<span class="ws-blog-tag">码艺Blog</span>' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/">悟道Wiki</a> ' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/physics-notes-blog/">格物Blog</a> ' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/engineering-notes-blog/">工巧Blog</a> ' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/math-notes-blog/">数术Blog</a> ' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/coding-notes-blog/">码艺Blog</a>' +
     '</span><br><br>' +
     '敬请赏玩，㊗️愉快～💐';
   /* ============================================================ */
@@ -113,9 +113,6 @@
           '<h2 class="ws-title">Welcome to flowwalker&#39;s blog!</h2>' +
           '<p class="ws-greeting">' + greeting + '</p>' +
           '<p class="ws-structure">' + STRUCTURE_HTML + '</p>' +
-          '<div class="ws-actions">' +
-            '<button class="ws-go" type="button">Let&#39;s go!</button>' +
-          '</div>' +
         '</div>' +
       '</div>';
 
@@ -132,7 +129,9 @@
     }
     function onEsc(e) { if (e.key === 'Escape') dismiss(); }
 
-    overlay.querySelector('.ws-go').addEventListener('click', dismiss);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) dismiss();
+    });
     document.addEventListener('keydown', onEsc);
 
     // 图片预加载：成功才插入 <img>，失败则回退为时段渐变
