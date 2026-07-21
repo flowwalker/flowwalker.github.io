@@ -65,7 +65,7 @@
   var STRUCTURE_HTML =
     '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山👇<br>' +
     '<span class="ws-blog-tags">' +
-      '点击<a class="ws-blog-tag ws-blog-tag-enter" data-action="dismiss-splash">进入</a> ' + '<br>' +
+      '<a class="ws-blog-tag ws-blog-tag-enter" data-action="dismiss-splash">进入</a> ' + '<br>' +
     '</span>' +
     '📚 <span class="ws-em">更多专刊</span>请见顶部导航栏 <span class="ws-em">「手札」</span><br>或者<span class="ws-em">直接点击</span>下方按钮👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
