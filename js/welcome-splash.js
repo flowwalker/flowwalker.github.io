@@ -65,7 +65,7 @@
   var STRUCTURE_HTML =
     '⛰️ 此地为笔者 <span class="ws-em">主博客</span> 所在之山👇<br>' +
     '<span class="ws-blog-tags">' +
-      '<a class="ws-blog-tag" href="/">进入</a> ' + '<br>' +
+      '点击<a class="ws-blog-tag ws-blog-tag-enter" data-action="dismiss-splash">进入</a> ' + '<br>' +
     '</span>' +
     '📚 <span class="ws-em">更多专刊</span>请见顶部导航栏 <span class="ws-em">「手札」</span><br>或者<span class="ws-em">直接点击</span>下方按钮👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
@@ -81,6 +81,9 @@
   // 等待页面完全加载后再展示浮层
   function initSplash() {
     if (!SPLASH_ENABLE) return;
+
+    // 同一会话已关闭过则不再弹出
+    if (sessionStorage.getItem('ws-dismissed')) return;
 
     // 只在首页弹出（可选）
     if (ONLY_HOME) {
@@ -123,6 +126,7 @@
     function dismiss() {
       if (closed) return;
       closed = true;
+      sessionStorage.setItem('ws-dismissed', '1');
       overlay.classList.add('ws-hide');
       document.removeEventListener('keydown', onEsc);
       setTimeout(function () {
@@ -135,6 +139,16 @@
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) dismiss();
     });
+
+    // "进入"按钮：关闭浮层（底下就是首页，无需导航）
+    var enterBtn = overlay.querySelector('[data-action="dismiss-splash"]');
+    if (enterBtn) {
+      enterBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        dismiss();
+      });
+    }
+
     document.addEventListener('keydown', onEsc);
 
     // 图片预加载：成功才插入 <img>，失败则回退为时段渐变
