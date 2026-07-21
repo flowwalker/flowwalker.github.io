@@ -1674,6 +1674,9 @@ document.addEventListener("DOMContentLoaded", function () {
             case 80:
               pjax.loadUrl("/about/");
               break;
+            case 67:
+              window.toggleCoverStyle();
+              break;
             default:
               break;
           }
