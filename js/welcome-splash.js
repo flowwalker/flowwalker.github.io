@@ -69,7 +69,7 @@
     '</span>' +
     '📚 <span class="ws-em">更多专刊</span>请见顶部导航栏 <span class="ws-em">「手札」</span><br>或者<span class="ws-em">直接点击</span>下方按钮👇周游群山<br>' +
     '<span class="ws-blog-tags">' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/">悟道Wiki</a> ' + '<br>' +
+      '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/" target="_blank" rel="noopener">悟道Wiki</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/physics-notes-blog/">格物Blog</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/engineering-notes-blog/">工巧Blog</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/math-notes-blog/">数术Blog</a> ' + '<br>' +
