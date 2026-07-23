@@ -72,7 +72,7 @@
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/flowwalker-wiki/" target="_blank" rel="noopener">悟道Wiki</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/physics-notes-blog/">格物Blog</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/engineering-notes-blog/">工巧Blog</a> ' + '<br>' +
-      '<a class="ws-blog-tag" href="https://flowwalker.github.io/math-notes-blog/">数术Blog</a> ' + '<br>' +
+      '<a class="ws-blog-tag" href="https://math.flowwalker.top/">数术Blog</a> ' + '<br>' +
       '<a class="ws-blog-tag" href="https://flowwalker.github.io/coding-notes-blog/">码艺Blog</a>' +
     '</span><br>' +
     '敬请赏玩，㊗️愉快～💐';
