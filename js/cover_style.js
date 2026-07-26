@@ -107,18 +107,30 @@
     }
   }
 
+  // Detect which dimension the current URL belongs to
+  function detectPageDimension() {
+    var path = window.location.pathname
+    if (path === '/conan' || /^\/conan\//.test(path)) return ANIME_STYLE
+    if (path === '/' || /^\/page\/\d+\/$/.test(path)) return DEFAULT_STYLE
+    return null // other pages (post, archive, tag, etc.) — don't force
+  }
+
   // Initialize on page load
   function init() {
-    var currentStyle = getCoverStyle()
+    var pageDimension = detectPageDimension()
 
-    // Preload alternative covers first (so they're ready when user toggles)
-    preloadAllAnimeCovers()
-
-    // Apply the saved style
-    applyCoverStyle(currentStyle)
-
-    // Update toggle button
-    updateToggleButton(currentStyle)
+    // Sync cover style with URL: nature home → nature, conan home → anime
+    if (pageDimension) {
+      setCoverStyle(pageDimension)
+      applyCoverStyle(pageDimension)
+      updateToggleButton(pageDimension)
+    } else {
+      var savedStyle = getCoverStyle()
+      // Preload alternative covers first (so they're ready when user toggles)
+      preloadAllAnimeCovers()
+      applyCoverStyle(savedStyle)
+      updateToggleButton(savedStyle)
+    }
   }
 
   // Run on initial page load
