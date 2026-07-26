@@ -142,10 +142,18 @@
 
   // Re-run after pjax navigation (SPA page transitions)
   document.addEventListener('pjax:complete', function () {
-    var currentStyle = getCoverStyle()
-    preloadAllAnimeCovers()
-    applyCoverStyle(currentStyle)
-    updateToggleButton(currentStyle)
+    var pageDimension = detectPageDimension()
+
+    if (pageDimension) {
+      setCoverStyle(pageDimension)
+      applyCoverStyle(pageDimension)
+      updateToggleButton(pageDimension)
+    } else {
+      var savedStyle = getCoverStyle()
+      preloadAllAnimeCovers()
+      applyCoverStyle(savedStyle)
+      updateToggleButton(savedStyle)
+    }
   })
 
   // Keyboard shortcut: Shift+C (keyCode 67)
