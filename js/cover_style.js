@@ -90,9 +90,20 @@
     updateToggleButton(next)
 
     // Show snackbar notification
-    var msg = next === ANIME_STYLE ? '已切换为动漫风格封面 ✨' : '已切换为自然风景封面 🌿'
+    var msg = next === ANIME_STYLE ? '已进入柯南次元 ✨' : '已返回主空间 🌿'
     if (typeof anzhiyu !== 'undefined' && anzhiyu.snackbarShow) {
       anzhiyu.snackbarShow(msg)
+    }
+
+    // Navigate between dimensions on index pages
+    var path = window.location.pathname
+    var isConanIndex = /^\/conan\//.test(path) || path === '/conan'
+    var isNatureIndex = !isConanIndex && (path === '/' || /^\/page\/\d+\/$/.test(path))
+
+    if (next === ANIME_STYLE && isNatureIndex) {
+      window.location.href = '/conan/'
+    } else if (next === DEFAULT_STYLE && isConanIndex) {
+      window.location.href = '/'
     }
   }
 
