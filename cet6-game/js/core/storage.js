@@ -69,6 +69,24 @@
     return highest;
   }
 
+  function sharedProgress() {
+    const seed = V8.PROGRESS_PACK;
+    if (!seed || typeof seed !== 'object') return null;
+    const currentPack = V8.WORD_PACK || {};
+    if (seed.wordPackId && seed.wordPackId !== currentPack.id) return null;
+    return seed;
+  }
+
+  function mergeCompleted(target, source) {
+    if (!source || typeof source !== 'object') return;
+    Object.keys(source).forEach(level => {
+      const ids = Array.isArray(source[level]) ? source[level] : [];
+      const key = String(Math.max(1, Math.floor(safeNumber(level, 1))));
+      const existing = Array.isArray(target[key]) ? target[key] : [];
+      target[key] = existing.concat(ids.filter(id => typeof id === 'string' && !existing.includes(id)));
+    });
+  }
+
   function emptyProgress() {
     return {
       schemaVersion: 2,
@@ -83,27 +101,29 @@
 
   function normalizeProgress(value) {
     const progress = emptyProgress();
-    if (!value || typeof value !== 'object') return progress;
-    if (value.schemaVersion >= 2 && value.completed && typeof value.completed === 'object') {
-      Object.keys(value.completed).forEach(level => {
-        const ids = Array.isArray(value.completed[level]) ? value.completed[level] : [];
+    const saved = value && typeof value === 'object' ? value : {};
+    if (saved.schemaVersion >= 2 && saved.completed && typeof saved.completed === 'object') {
+      Object.keys(saved.completed).forEach(level => {
+        const ids = Array.isArray(saved.completed[level]) ? saved.completed[level] : [];
         progress.completed[String(Math.max(1, Math.floor(safeNumber(level, 1))))] = ids.filter(id => typeof id === 'string');
       });
     } else {
       // Migrate the old four-level counter conservatively. It represented an
       // unlocked count, not proof of a completed challenge, so level one only
       // remains available until the new pair-based records are earned.
-      const legacy = Math.max(1, Math.floor(safeNumber(value.unlocked, 1)));
+      const legacy = Math.max(1, Math.floor(safeNumber(saved.unlocked, 1)));
       progress.highestUnlockedLevel = legacy;
     }
+    const seed = sharedProgress();
+    if (seed) mergeCompleted(progress.completed, seed.completed);
     const totalLevels = Math.max(1, Math.ceil(((V8.WORD_PACK && V8.WORD_PACK.words) || []).length / levelSize()));
-    progress.highestUnlockedLevel = Math.max(1, Math.min(totalLevels, Math.floor(safeNumber(value.highestUnlockedLevel, progress.highestUnlockedLevel))));
-    if (value.customRange && typeof value.customRange === 'object') {
-      progress.customRange.start = Math.max(1, Math.floor(safeNumber(value.customRange.start, progress.customRange.start)));
-      progress.customRange.end = Math.max(progress.customRange.start, Math.floor(safeNumber(value.customRange.end, progress.customRange.end)));
+    progress.highestUnlockedLevel = Math.max(1, Math.min(totalLevels, Math.floor(safeNumber(saved.highestUnlockedLevel, progress.highestUnlockedLevel))));
+    if (saved.customRange && typeof saved.customRange === 'object') {
+      progress.customRange.start = Math.max(1, Math.floor(safeNumber(saved.customRange.start, progress.customRange.start)));
+      progress.customRange.end = Math.max(progress.customRange.start, Math.floor(safeNumber(saved.customRange.end, progress.customRange.end)));
       progress.customRange.end = Math.min(totalLevels * levelSize(), progress.customRange.end);
     }
-    progress.updatedAt = safeNumber(value.updatedAt, 0);
+    progress.updatedAt = safeNumber(saved.updatedAt, 0);
     // Rebuild the level gate from the recorded English pair instead of
     // trusting a stale highestUnlockedLevel from an older build. This keeps
     // the sequential unlock rule intact across schema revisions.
