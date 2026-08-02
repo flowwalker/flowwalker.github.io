@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,interactive-widget=resizes-content">
+<title>⭐ CET-6 单词跑酷 v11 · Day 2</title>
+<link rel="icon" href="data:,">
+<!-- Shared engine stylesheets -->
+<link rel="stylesheet" href="../css/worlds.css">
+<link rel="stylesheet" href="../css/animations.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/streak.css">
+<script>
+(function() {
+  'use strict';
+  var requested = new URLSearchParams(window.location.search).get('section');
+  // Section A is the default route; the side rail still allows switching.
+  var selected = /^[abc]$/.test(requested || '') ? requested : 'a';
+
+  window.CURRENT_DAY = 2;
+  window.CURRENT_SECTION = selected;
+  window.ACTIVE_SECTION = selected;
+  window.V8 = window.V8 || {};
+  window.V8.WORD_PACKS = Object.create(null);
+  window.pickSection = function(section) {
+    if (!/^[abc]$/.test(section) || section === window.CURRENT_SECTION) return false;
+    return Boolean(window.V8 && V8.ui && V8.ui.switchSection && V8.ui.switchSection(section));
+  };
+})();
+</script>
+<!-- All three tiny packs are cached up front so Section changes stay in-page. -->
+<script src="words_a.js"></script><script>window.V8.WORD_PACKS.a = window.V8.WORD_PACK;</script>
+<script src="words_b.js"></script><script>window.V8.WORD_PACKS.b = window.V8.WORD_PACK;</script>
+<script src="words_c.js"></script><script>window.V8.WORD_PACKS.c = window.V8.WORD_PACK;</script>
+<script>window.V8.WORD_PACK = window.V8.WORD_PACKS[window.ACTIVE_SECTION];</script>
+</head>
+<body data-phase="0">
+<script>
+(function () {
+  var skin = 'blue';
+  try {
+    var saved = localStorage.getItem('cet6_v11_start_skin');
+    if (saved === 'pink' || saved === 'blue') skin = saved;
+  } catch (e) {}
+  window.START_SKIN = skin;
+  document.body.dataset.startSkin = skin;
+  document.body.classList.add('start-skin-' + skin);
+  if (window.CURRENT_SECTION) document.body.classList.add('section-selected');
+})();
+</script>
+
+<!-- ===== START SCREEN ===== -->
+<div class="start-overlay" id="startScreen">
+  <div class="start-petals" aria-hidden="true">
+    <i style="--x:7%;--d:0s;--s:.7"></i><i style="--x:19%;--d:2.8s;--s:1"></i>
+    <i style="--x:33%;--d:5.4s;--s:.8"></i><i style="--x:48%;--d:1.6s;--s:1.1"></i>
+    <i style="--x:62%;--d:6.7s;--s:.75"></i><i style="--x:76%;--d:3.9s;--s:.95"></i>
+    <i style="--x:89%;--d:7.8s;--s:.8"></i>
+  </div>
+  <div class="blue-snow" aria-hidden="true">
+    <i style="--x:2%;--d:-1.4s;--dur:9.8s;--size:3px;--drift:18px"></i>
+    <i style="--x:8%;--d:-6.2s;--dur:11.2s;--size:5px;--drift:-26px"></i>
+    <i style="--x:14%;--d:-3.1s;--dur:8.7s;--size:3px;--drift:31px"></i>
+    <i style="--x:21%;--d:-8.3s;--dur:12.4s;--size:4px;--drift:-19px"></i>
+    <i style="--x:27%;--d:-4.7s;--dur:10.1s;--size:6px;--drift:24px"></i>
+    <i style="--x:34%;--d:-2.2s;--dur:9.1s;--size:3px;--drift:-34px"></i>
+    <i style="--x:40%;--d:-10.1s;--dur:13s;--size:4px;--drift:22px"></i>
+    <i style="--x:47%;--d:-5.6s;--dur:10.8s;--size:5px;--drift:-28px"></i>
+    <i style="--x:53%;--d:-7.4s;--dur:11.8s;--size:3px;--drift:35px"></i>
+    <i style="--x:59%;--d:-1.9s;--dur:8.9s;--size:4px;--drift:-22px"></i>
+    <i style="--x:65%;--d:-9.2s;--dur:12.8s;--size:6px;--drift:27px"></i>
+    <i style="--x:71%;--d:-3.8s;--dur:9.7s;--size:3px;--drift:-32px"></i>
+    <i style="--x:77%;--d:-6.7s;--dur:11.4s;--size:5px;--drift:20px"></i>
+    <i style="--x:83%;--d:-2.8s;--dur:9.3s;--size:4px;--drift:-25px"></i>
+    <i style="--x:89%;--d:-8.8s;--dur:12.1s;--size:3px;--drift:30px"></i>
+    <i style="--x:95%;--d:-4.1s;--dur:10.5s;--size:5px;--drift:-18px"></i>
+    <i style="--x:5%;--d:-11.5s;--dur:14s;--size:2px;--drift:42px"></i>
+    <i style="--x:18%;--d:-12.1s;--dur:13.5s;--size:2px;--drift:-40px"></i>
+    <i style="--x:32%;--d:-13.4s;--dur:14.5s;--size:2px;--drift:38px"></i>
+    <i style="--x:68%;--d:-12.8s;--dur:13.8s;--size:2px;--drift:-36px"></i>
+    <i style="--x:92%;--d:-14.2s;--dur:15s;--size:2px;--drift:40px"></i>
+  </div>
+  <main class="start-shell">
+    <header class="start-header">
+      <div class="start-eyebrow">CET-6 VOCABULARY QUEST</div>
+      <div class="start-title-row">
+        <div class="start-seal" aria-hidden="true"><span>🚀</span></div>
+        <div class="start-title-copy">
+          <h1>单词跑酷<small>V11</small></h1>
+          <div class="sub" id="startSub">CET-6 · Day 2 · 三组任选 · 四关递进</div>
+        </div>
+      </div>
+    </header>
+    <div class="start-route" aria-label="四关世界路线">
+      <span>01 黎明冲刺</span><span>02 霓虹都市</span><span>03 深渊坠落</span><span>04 星空决胜</span>
+    </div>
+    <div class="start-rules">
+      <span><b>45 秒</b> / 词</span><span><b>3 次</b> 容错</span><span>连击回血与技能解锁</span>
+    </div>
+    <div class="section-picker" id="sectionPicker" aria-label="选择词组">
+      <button type="button" class="start-skin-toggle" id="startSkinToggle" title="切换开始界面皮肤" aria-label="切换开始界面皮肤" onclick="toggleStartSkin()">
+        <span class="skin-toggle-icon" aria-hidden="true">🌸</span><span class="skin-toggle-label">梦幻粉</span>
+      </button>
+      <button class="section-btn" data-section="a" data-letter="A" title="切换到 Section A" aria-label="切换到 Section A" onclick="pickSection('a')">Section A</button>
+      <button class="section-btn" data-section="b" data-letter="B" title="切换到 Section B" aria-label="切换到 Section B" onclick="pickSection('b')">Section B</button>
+      <button class="section-btn" data-section="c" data-letter="C" title="切换到 Section C" aria-label="切换到 Section C" onclick="pickSection('c')">Section C</button>
+    </div>
+    <div class="section-help" id="sectionHelp">选择本次要练习的 50 词组</div>
+    <div class="start-btns hidden" id="lvBtns"></div>
+    <div class="start-btns start-secondary-actions">
+      <button class="btn-browse hidden" id="btnBrowse" onclick="openReview()">先过一遍词表</button>
+    </div>
+    <div class="start-audio-control">
+      <button type="button" class="start-audio-btn" id="startBgmBtn" title="停止背景音乐" aria-pressed="false" onclick="bgmStopToggle()">
+        <span class="start-audio-icon" aria-hidden="true">⏹</span><span class="start-audio-label">停止音乐</span>
+      </button>
+    </div>
+    <label class="hardcore-toggle">
+      <input type="checkbox" id="hardcoreCheck">
+      <span class="hardcore-switch" aria-hidden="true"></span>
+      <span class="hardcore-copy"><strong>硬核模式</strong><small>单心挑战</small></span>
+    </label>
+    <div class="start-credit">BGM · 主页面与九个世界独立曲库</div>
+  </main>
+</div>
+
+<!-- ===== REVIEW PANEL ===== -->
+<div class="review-panel hidden" id="reviewPanel" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+  <div class="review-shell">
+    <div class="review-kicker" aria-hidden="true">WORD ATLAS · CET-6</div>
+    <h2 id="reviewTitle">📖 单词浏览</h2>
+    <div class="review-toggle" role="group" aria-label="词义显示方向">
+      <button id="revEn" class="active" aria-pressed="true" onclick="setRevMode('en')">英 → 中</button>
+      <button id="revCn" aria-pressed="false" onclick="setRevMode('cn')">中 → 英</button>
+      <button id="revBoth" aria-pressed="false" onclick="setRevMode('both')">中英对照</button>
+    </div>
+    <div class="review-counter" id="revCounter" aria-live="polite">1 / 50</div>
+    <button type="button" class="review-card" id="revCard" aria-controls="revSub" aria-label="查看当前词语答案" onclick="revealCard()">
+      <span class="ren" id="revMain"></span>
+      <span class="rcn" id="revSub" aria-live="polite" style="display:none"></span>
+      <span class="rhint" id="revHint">👆 点击揭晓</span>
+    </button>
+    <div class="review-nav" aria-label="词语导航">
+      <button type="button" id="revPrev" aria-label="上一个单词" title="上一个单词" onclick="revNav(-1)">◀</button>
+      <button type="button" id="revNext" aria-label="下一个单词" title="下一个单词" onclick="revNav(1)">▶</button>
+    </div>
+    <button type="button" class="btn-back" onclick="closeReview()">🔙 返回</button>
+  </div>
+</div>
+
+<!-- ===== GAME CANVASES ===== -->
+<canvas id="bgCanvas" class="hidden"></canvas>
+<canvas id="fxCanvas" class="hidden"></canvas>
+
+<!-- ===== CHARACTER STAGE ===== -->
+<div class="stage hidden" id="stage">
+  <div class="brick" id="brick" role="img" aria-label="金龙伙伴">
+    <img class="dragon-companion" id="dragonCompanion" src="../assets/dragon/dragon_fly.gif" alt="" aria-hidden="true">
+  </div>
+  <div class="char" id="char" data-mode="run">
+    <div class="char-inner" id="charInner">
+      <div class="abyss-cloud" id="abyssCloud" aria-hidden="true"></div>
+      <img class="qt-player" id="qtPlayer" alt="" aria-hidden="true">
+      <div class="ghost g1" id="g1"></div>
+      <div class="ghost g2" id="g2"></div>
+      <div class="px" id="charPx"></div>
+      <div class="board"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME UI ===== -->
+<div class="word-stage hidden" id="wordStage">
+  <div class="sign" id="sign">
+    <div class="word-bonus" id="wordBonus" aria-live="polite"></div>
+    <div class="sign-dir" id="signDir">英 → 汉</div>
+    <div class="prompt-word" id="promptWord"></div>
+  </div>
+  <div class="slot-hint" id="slotHint"></div>
+  <div class="timer-wrap" id="timerWrap">
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+    <div class="timer-num" id="timerNum">45s</div>
+    <div class="timer-status" id="timerStatus" aria-live="polite"></div>
+  </div>
+  <div class="combo-line" id="comboLine"></div>
+</div>
+
+<!-- HUD -->
+<div class="hud hidden" id="hud">
+  <div class="hud-left">
+    <div class="world-tag" id="worldTag">🌅 W1 英译汉→ · 黎明冲刺</div>
+    <div id="hpDisplay" style="font-size:18px;letter-spacing:4px;min-width:80px;text-align:left"></div>
+  </div>
+  <div class="hud-right">
+    <div class="score-display" id="scoreBox">🪙 <span id="scoreDisp">100</span></div>
+    <button class="mute-btn" id="bgmBtn" title="背景音乐静音开关" onclick="bgmToggle()">🎵</button>
+    <button class="mute-btn" id="muteBtn" title="全部声音开关" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="progress-mini" id="progressBar"></div>
+</div>
+
+<!-- Distance -->
+<div class="dist-overlay hidden" id="distOverlay">
+  <div class="dist-num" id="distNum">0m</div>
+</div>
+
+<!-- Skill bar -->
+<div class="skill-bar hidden" id="skillBar"></div>
+
+<!-- Input bar -->
+<div class="input-bar hidden" id="inputBar">
+  <input type="text" id="answerIn" placeholder="输入答案…" autocomplete="off" autocorrect="off" autocapitalize="off" enterkeyhint="go">
+  <button type="button" class="give-up-btn" id="giveUpBtn" title="忘记了，结束本局并查看答案（Esc）" aria-label="忘记了，结束本局并查看答案">不会</button>
+  <button type="button" class="quit-run-btn" id="quitBtn" title="暂时退出本局并返回选关" aria-label="暂时退出本局并返回选关">↩ <span>退出</span></button>
+  <button type="button" id="jumpBtn" aria-label="跳跃" title="跳跃" onclick="jump()">⬆</button>
+</div>
+
+<!-- Debug / Vignette -->
+<div class="dbg-badge hidden" id="dbgBadge">DBG</div>
+<div class="vgn-danger" id="vgnDanger"></div>
+<div class="vignette" id="vignette"></div>
+
+<!-- ===== SCRIPTS — shared engine from parent game/ ===== -->
+<!-- Core -->
+<script src="../js/core/eventbus.js"></script>
+<script src="../js/core/state.js"></script>
+<script src="../js/core/storage.js"></script>
+<script src="../js/core/world.js"></script>
+<!-- The selected word pack was loaded synchronously in <head>. -->
+<script src="../js/data/config.js"></script>
+<!-- Optional worlds are isolated plugins; the four base worlds remain intact. -->
+<script src="../js/worlds/registry.js"></script>
+<script src="../js/worlds/forest.js"></script>
+<script src="../js/worlds/ice.js"></script>
+<script src="../js/worlds/cyber.js"></script>
+<script src="../js/worlds/sea.js"></script>
+<script src="../js/worlds/sakura.js"></script>
+<script src="../js/data/assets.js"></script>
+<!-- Audio -->
+<script src="../js/audio/sfx.js"></script>
+<script src="../js/audio/bgm.js"></script>
+<!-- Components -->
+<script src="../js/components/index.js"></script>
+<!-- Systems -->
+<script src="../js/systems/render.js"></script>
+<script src="../js/systems/particles.js"></script>
+<script src="../js/systems/entities.js"></script>
+<script src="../js/systems/player.js"></script>
+<script src="../js/systems/brick.js"></script>
+<script src="../js/systems/pet.js"></script>
+<script src="../js/systems/words.js"></script>
+<script src="../js/systems/combo.js"></script>
+<script src="../js/systems/streak.js"></script>
+<script src="../js/systems/timer.js"></script>
+<script src="../js/systems/hp.js"></script>
+<script src="../js/systems/skills.js"></script>
+<script src="../js/systems/ui.js"></script>
+
+<!-- Main entry (after all systems) -->
+<script src="../js/main.js"></script>
+</body>
+</html>

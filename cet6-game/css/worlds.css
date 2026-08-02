@@ -1,0 +1,269 @@
+/* ===== Worlds Theme Variables ===== */
+/* Base worlds keep phase selectors; optional worlds use stable plugin IDs. */
+:root {
+  --kb: 0px;
+  --vvh: 100dvh;
+  --glow: #ffb347;
+}
+body[data-phase="0"] { --glow: #ffb347; }
+body[data-phase="1"] { --glow: #ff2d95; }
+body[data-phase="2"] { --glow: #ff3b30; }
+body[data-phase="3"] { --glow: #7ab8ff; }
+body[data-world="forest"] { --glow: #a7ff9a; }
+body[data-world="ice"] { --glow: #d7fbff; }
+body[data-world="cyber"] { --glow: #47efff; }
+body[data-world="sea"] { --glow: #bfffff; }
+body[data-world="sakura"] { --glow: #ffbad3; }
+
+/* Cyber rain keeps its post-processing separate from every other world. */
+body[data-world="cyber"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(1, 5, 15, .025), rgba(1, 5, 15, .13)),
+    repeating-linear-gradient(0deg, rgba(151, 225, 255, .026) 0 1px, transparent 1px 5px);
+  opacity: .68;
+  animation: cyberNightFlicker 6.4s steps(1, end) infinite;
+  will-change: opacity;
+}
+
+/* Neon city: a compact street deck with grip tape and visible wheels. */
+body[data-phase="1"] .char .board {
+  border-color: rgba(255,203,247,.9);
+  background:
+    radial-gradient(ellipse at 8% 10%, #fff 0 5%, transparent 7%),
+    radial-gradient(ellipse at 92% 10%, #dfffff 0 5%, transparent 7%),
+    linear-gradient(180deg, #6e2d79 0 19%, #27183f 21% 58%, #0a0b1b 61% 100%);
+  box-shadow: inset 0 2px 2px rgba(255,255,255,.35), inset 0 -3px 3px rgba(0,0,0,.58),
+              0 3px 0 -1px #090713, 0 0 13px rgba(255,45,149,.62), 0 0 7px rgba(69,230,255,.44);
+}
+body[data-phase="1"] .char .board::before {
+  background:
+    repeating-linear-gradient(108deg, rgba(255,255,255,.28) 0 2px, transparent 2px 8px),
+    linear-gradient(90deg, #ff2d95, #ff75d3 34%, #45e6ff 64%, #9667ff);
+}
+body[data-phase="1"] .char .board::after {
+  background: radial-gradient(circle at 40% 34%, #fff 0 9%, #ff57bd 18% 43%, #151027 49% 100%);
+  box-shadow: 0 0 0 1px #080612, 59px 0 0 #55ecff, 59px 0 0 1px #080612,
+              0 0 8px rgba(255,45,149,.85), 59px 0 8px rgba(69,230,255,.88);
+}
+
+/* Icefield: a translucent snowboard with raised tips and a bright snow edge. */
+body[data-world="ice"] .char .board {
+  left: -33px; bottom: -8px; width: 114px; height: 15px;
+  border-color: rgba(238,254,255,.96);
+  border-radius: 68% 72% 38% 36% / 88% 90% 40% 44%;
+  background:
+    linear-gradient(116deg, transparent 0 23%, rgba(255,255,255,.55) 24% 26%, transparent 27% 47%, rgba(98,224,255,.54) 48% 51%, transparent 52%),
+    linear-gradient(180deg, #f8ffff 0 17%, #9ff3ff 20% 50%, #3b9fe1 54% 76%, #184e9a 79% 100%);
+  box-shadow: inset 0 2px 3px rgba(255,255,255,.76), inset 0 -3px 3px rgba(18,72,143,.55),
+              0 4px 0 -2px rgba(19,75,135,.85), 0 0 15px rgba(185,247,255,.88);
+}
+body[data-world="ice"] .char .board::before {
+  left: 13px; right: 13px; top: 3px; height: 5px;
+  background:
+    radial-gradient(circle at 43% 50%, #eaffff 0 2px, #4a9ddb 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle at 57% 50%, #eaffff 0 2px, #4a9ddb 2.5px 4px, transparent 4.5px),
+    linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  box-shadow: none;
+}
+body[data-world="ice"] .char .board::after {
+  left: 10px; right: 10px; bottom: -5px; width: auto; height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(230,253,255,.88) 18%, #62dcff 54%, rgba(222,251,255,.76) 82%, transparent);
+  box-shadow: 0 3px 8px rgba(108,228,255,.72);
+}
+/* Cyber rain: a metal hover deck with an inset energy rail and twin lift pods. */
+body[data-world="cyber"] .char .board {
+  left: -31px; width: 110px; height: 15px;
+  border-color: rgba(141,250,255,.9);
+  border-radius: 54% 58% 32% 34% / 74% 78% 38% 42%;
+  background:
+    linear-gradient(120deg, transparent 0 17%, rgba(255,255,255,.18) 18% 20%, transparent 21% 73%, rgba(255,64,178,.28) 74% 77%, transparent 78%),
+    linear-gradient(180deg, #30405c 0 16%, #11192b 19% 58%, #050914 62% 100%);
+  box-shadow: inset 0 2px 2px rgba(202,253,255,.3), inset 0 -3px 3px rgba(0,0,0,.72),
+              0 3px 0 -1px #03050b, 0 0 15px rgba(78,238,255,.72), 0 0 8px rgba(255,63,166,.48);
+}
+body[data-world="cyber"] .char .board::before {
+  left: 11px; right: 11px; top: 3px; height: 5px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 7px, rgba(4,10,22,.72) 7px 10px),
+    linear-gradient(90deg, #ff3fa6, #a75cff 42%, #4eeeff 62%, #66fff0);
+  box-shadow: 0 0 6px rgba(78,238,255,.72), inset 0 1px rgba(255,255,255,.5);
+}
+body[data-world="cyber"] .char .board::after {
+  left: 14px; bottom: -8px; width: 18px; height: 7px;
+  border-radius: 35% 35% 60% 60%;
+  background: linear-gradient(180deg, #1d2942, #060b16 58%, #40eaff 62% 100%);
+  box-shadow: 0 0 0 1px #02050b, 64px 0 0 #131b30, 64px 0 0 1px #02050b,
+              0 5px 10px rgba(69,230,255,.86), 64px 5px 10px rgba(255,63,166,.82);
+}
+body[data-world="sea"] .char .board {
+  display: block;
+  left: -23px;
+  bottom: -8px;
+  z-index: -1;
+  width: 94px;
+  height: 13px;
+  border: 1.5px solid rgba(235,255,251,.92);
+  border-radius: 64% 76% 58% 72% / 58% 70% 48% 62%;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.96) 0 6%, transparent 6% 43%, rgba(255,209,102,.88) 43% 50%, transparent 50% 78%, rgba(255,255,255,.80) 78% 84%, transparent 84%),
+    linear-gradient(180deg, #86fff0, #24b9d2 48%, #126b9d 54%, #062c5f);
+  box-shadow: 0 5px 0 -3px rgba(2,31,72,.90), 0 0 15px rgba(107,245,238,.74);
+  transform-origin: 62% 50%;
+}
+body[data-world="sea"] .char .board::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 2.5px;
+  width: 47px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(238,255,251,.72);
+  box-shadow: none;
+}
+body[data-world="sea"] .char .board::after {
+  content: '';
+  position: absolute;
+  left: 22px;
+  bottom: -7px;
+  width: 10px;
+  height: 8px;
+  border-radius: 1px 1px 7px 7px;
+  background: linear-gradient(180deg, #28c9db, #073e72);
+  box-shadow: none;
+  transform: skewX(-17deg);
+}
+
+/* Terrain plugins move .char vertically; these poses animate only its contents. */
+body[data-world="forest"] .char.terrain-flight .char-inner {
+  animation: forestTerrainFlight .58s ease-in-out infinite alternate;
+}
+body[data-world="ice"] .char.terrain-flight .char-inner {
+  animation: iceTerrainFlight .54s ease-in-out infinite alternate;
+}
+body[data-world="cyber"] .char.terrain-flight .char-inner {
+  animation: cyberTerrainFlight .46s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+}
+body[data-world="sea"] .char.terrain-flight .char-inner {
+  animation: seaTerrainFlight .60s ease-in-out infinite alternate;
+}
+
+body[data-world="forest"] .char.terrain-landing .char-inner {
+  animation: forestTerrainLanding .42s ease-out both;
+}
+body[data-world="ice"] .char.terrain-landing .char-inner {
+  animation: iceTerrainLanding .40s ease-out both;
+}
+body[data-world="cyber"] .char.terrain-landing .char-inner {
+  animation: cyberTerrainLanding .39s cubic-bezier(.2, .72, .28, 1) both;
+}
+body[data-world="sea"] .char.terrain-landing .char-inner {
+  animation: seaTerrainLanding .46s ease-out both;
+}
+
+/* The rider stays state-machine controlled; only the board carries the wave sway. */
+body[data-world="sea"] .char[data-mode="skate"] .board {
+  animation: seaBoardRide .82s ease-in-out infinite alternate;
+}
+body[data-world="sea"] .char.terrain-flight .board {
+  animation: seaBoardFlight .56s ease-in-out infinite alternate;
+}
+
+/* World-specific CSS overrides */
+body.nightowl #bgCanvas { filter: brightness(.85); }
+body.nightowl.dead-scene #bgCanvas { filter: grayscale(.78) brightness(.53); }
+
+@keyframes cyberNightFlicker {
+  0%, 28%, 64%, 100% { opacity: .68; }
+  29% { opacity: .61; }
+  30% { opacity: .70; }
+  65% { opacity: .64; }
+  66% { opacity: .69; }
+}
+
+@keyframes forestTerrainFlight {
+  from { transform: translate3d(0, 1px, 0) rotate(-5deg) scale(1.01, .99); }
+  to { transform: translate3d(2px, -3px, 0) rotate(4deg) scale(.99, 1.015); }
+}
+
+@keyframes iceTerrainFlight {
+  from { transform: translate3d(0, 1px, 0) rotate(-8deg); }
+  to { transform: translate3d(2px, -3px, 0) rotate(5deg); }
+}
+
+@keyframes cyberTerrainFlight {
+  0% { transform: translate3d(-1px, 1px, 0) rotate(-4deg); }
+  48% { transform: translate3d(2px, -3px, 0) rotate(2deg); }
+  55% { transform: translate3d(1px, -2px, 0) rotate(.5deg); }
+  100% { transform: translate3d(3px, 0, 0) rotate(4deg); }
+}
+
+@keyframes seaTerrainFlight {
+  from { transform: translate3d(0, 2px, 0) rotate(-6deg); }
+  to { transform: translate3d(3px, -4px, 0) rotate(4deg); }
+}
+
+@keyframes forestTerrainLanding {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  24% { transform: translate3d(0, 6px, 0) scale(1.10, .84); }
+  56% { transform: translate3d(0, -4px, 0) scale(.95, 1.08); }
+  78% { transform: translate3d(0, 1px, 0) scale(1.025, .97); }
+}
+
+@keyframes iceTerrainLanding {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0) scale(1); }
+  22% { transform: translate3d(1px, 5px, 0) rotate(3deg) scale(1.08, .86); }
+  55% { transform: translate3d(-1px, -3px, 0) rotate(-2deg) scale(.97, 1.06); }
+  78% { transform: translate3d(0, 1px, 0) rotate(.8deg) scale(1.015, .98); }
+}
+
+@keyframes cyberTerrainLanding {
+  0%, 100% { transform: translate3d(0, 0, 0) skewX(0) scale(1); }
+  20% { transform: translate3d(2px, 5px, 0) skewX(-3deg) scale(1.09, .85); }
+  50% { transform: translate3d(-2px, -3px, 0) skewX(2deg) scale(.96, 1.07); }
+  72% { transform: translate3d(1px, 1px, 0) skewX(-1deg) scale(1.02, .98); }
+}
+
+@keyframes seaTerrainLanding {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0) scale(1); }
+  22% { transform: translate3d(2px, 7px, 0) rotate(4deg) scale(1.11, .82); }
+  52% { transform: translate3d(-1px, -5px, 0) rotate(-3deg) scale(.95, 1.09); }
+  76% { transform: translate3d(1px, 2px, 0) rotate(1deg) scale(1.025, .97); }
+}
+
+@keyframes seaBoardRide {
+  from { transform: translateY(-.5px) rotate(-1deg); }
+  to { transform: translateY(.6px) rotate(1deg); }
+}
+
+@keyframes seaBoardFlight {
+  from { transform: translate3d(0, 1px, 0) rotate(-7deg); }
+  to { transform: translate3d(2px, -2px, 0) rotate(6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-world="cyber"]::before {
+    animation: none;
+    opacity: .64;
+    will-change: auto;
+  }
+  body[data-world="forest"] .char.terrain-flight .char-inner,
+  body[data-world="forest"] .char.terrain-landing .char-inner,
+  body[data-world="ice"] .char.terrain-flight .char-inner,
+  body[data-world="ice"] .char.terrain-landing .char-inner,
+  body[data-world="cyber"] .char.terrain-flight .char-inner,
+  body[data-world="cyber"] .char.terrain-landing .char-inner,
+  body[data-world="sea"] .char.terrain-flight .char-inner,
+  body[data-world="sea"] .char.terrain-landing .char-inner,
+  body[data-world="sea"] .char[data-mode="skate"] .board,
+  body[data-world="sea"] .char.terrain-flight .board {
+    animation: none;
+    transform: none;
+  }
+}
