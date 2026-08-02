@@ -8,16 +8,21 @@
   // may contain fewer than 50 words (5,523 words currently produce 111).
   const LEVEL_SIZE = 50;
   const BASE_CHALLENGES = [
-    { id: 'en-forward', mode: 1, dir: 1, order: 'normal', family: 'en', sequence: 'forward', name: '英译汉 · 正序', icon: '🚀', subtitle: '英文提示 · 正序推进' },
-    { id: 'en-reverse', mode: 1, dir: -1, order: 'normal', family: 'en', sequence: 'reverse', name: '英译汉 · 逆序', icon: '🚀', subtitle: '英文提示 · 逆序回溯' },
-    { id: 'cn-forward', mode: 0, dir: 1, order: 'normal', family: 'cn', sequence: 'forward', name: '汉译英 · 正序', icon: '🔥', subtitle: '中文提示 · 正序推进' },
-    { id: 'cn-reverse', mode: 0, dir: -1, order: 'normal', family: 'cn', sequence: 'reverse', name: '汉译英 · 逆序', icon: '🌟', subtitle: '中文提示 · 逆序回溯' },
+    { id: 'en-forward', mode: 1, dir: 1, order: 'normal', family: 'en', sequence: 'forward', name: '英译汉 · 正序', icon: '🚀', subtitle: '英文提示 · 正序推进', prerequisites: [] },
+    { id: 'en-reverse', mode: 1, dir: -1, order: 'normal', family: 'en', sequence: 'reverse', name: '英译汉 · 逆序', icon: '🚀', subtitle: '英文提示 · 逆序回溯', prerequisites: ['en-forward'] },
+    { id: 'cn-forward', mode: 0, dir: 1, order: 'normal', family: 'cn', sequence: 'forward', name: '汉译英 · 正序', icon: '🔥', subtitle: '中文提示 · 正序推进', prerequisites: ['en-forward', 'en-reverse'] },
+    { id: 'cn-reverse', mode: 0, dir: -1, order: 'normal', family: 'cn', sequence: 'reverse', name: '汉译英 · 逆序', icon: '🌟', subtitle: '中文提示 · 逆序回溯', prerequisites: ['en-forward', 'en-reverse', 'cn-forward'] },
   ];
   const RANDOM_CHALLENGES = [
-    { id: 'en-random', mode: 1, dir: 1, order: 'random', family: 'en', sequence: 'random', name: '英译汉 · 随机', icon: '🎲', subtitle: '英文提示 · 随机挑战', unlockAfter: ['en-forward', 'en-reverse'] },
-    { id: 'cn-random', mode: 0, dir: 1, order: 'random', family: 'cn', sequence: 'random', name: '汉译英 · 随机', icon: '🎲', subtitle: '中文提示 · 随机挑战', unlockAfter: ['cn-forward', 'cn-reverse'] },
+    { id: 'en-random', mode: 1, dir: 1, order: 'random', family: 'en', sequence: 'random', name: '英译汉 · 随机', icon: '🎲', subtitle: '英文提示 · 随机挑战', prerequisites: ['en-forward', 'en-reverse'] },
+    { id: 'cn-random', mode: 0, dir: 1, order: 'random', family: 'cn', sequence: 'random', name: '汉译英 · 随机', icon: '🎲', subtitle: '中文提示 · 随机挑战', prerequisites: ['en-forward', 'en-reverse', 'cn-forward', 'cn-reverse'] },
   ];
-  const CHALLENGES = BASE_CHALLENGES.concat(RANDOM_CHALLENGES);
+  // Keep the optional English random branch beside the two challenges that
+  // unlock it; the Chinese random branch remains after the four-step mainline.
+  const CHALLENGES = [
+    BASE_CHALLENGES[0], BASE_CHALLENGES[1], RANDOM_CHALLENGES[0],
+    BASE_CHALLENGES[2], BASE_CHALLENGES[3], RANDOM_CHALLENGES[1],
+  ];
   // Keep six challenge definitions for the existing loop; the blog UI pairs
   // each challenge with a selected 1-based vocabulary level.
   const LV_DEF = CHALLENGES;

@@ -33,6 +33,42 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  function challengeDefinition(challengeId) {
+    const cfg = V8.CFG || {};
+    const list = Array.isArray(cfg.CHALLENGES) ? cfg.CHALLENGES : [];
+    return list.find(challenge => challenge && challenge.id === challengeId) || null;
+  }
+
+  // Keep a fallback for old pages or partially cached config files. Once the
+  // current config is loaded, its explicit prerequisites are authoritative.
+  function challengePrerequisites(challengeId) {
+    const definition = challengeDefinition(challengeId);
+    if (definition && Array.isArray(definition.prerequisites)) return definition.prerequisites.slice();
+    const fallback = {
+      'en-forward': [],
+      'en-reverse': ['en-forward'],
+      'en-random': ['en-forward', 'en-reverse'],
+      'cn-forward': ['en-forward', 'en-reverse'],
+      'cn-reverse': ['en-forward', 'en-reverse', 'cn-forward'],
+      'cn-random': ['en-forward', 'en-reverse', 'cn-forward', 'cn-reverse'],
+    };
+    return Object.prototype.hasOwnProperty.call(fallback, challengeId) ? fallback[challengeId] : null;
+  }
+
+  function hasEnglishPair(completed, level) {
+    const list = completed[String(level)] || [];
+    return list.includes('en-forward') && list.includes('en-reverse');
+  }
+
+  function deriveHighestUnlocked(completed, totalLevels) {
+    let highest = 1;
+    for (let level = 1; level < totalLevels; level++) {
+      if (!hasEnglishPair(completed, level)) break;
+      highest = level + 1;
+    }
+    return highest;
+  }
+
   function emptyProgress() {
     return {
       schemaVersion: 2,
@@ -68,11 +104,15 @@
       progress.customRange.end = Math.min(totalLevels * levelSize(), progress.customRange.end);
     }
     progress.updatedAt = safeNumber(value.updatedAt, 0);
+    // Rebuild the level gate from the recorded English pair instead of
+    // trusting a stale highestUnlockedLevel from an older build. This keeps
+    // the sequential unlock rule intact across schema revisions.
+    progress.highestUnlockedLevel = deriveHighestUnlocked(progress.completed, totalLevels);
     // Compatibility fields for the current transition UI. They are derived
     // from the challenge map and are not the source of truth.
     progress.completedWindows = Object.keys(progress.completed).map(Number).filter(level => {
       const done = progress.completed[level] || [];
-      return ['en-forward', 'en-reverse', 'cn-forward', 'cn-reverse'].every(id => done.includes(id));
+      return ['en-forward', 'en-reverse'].every(id => done.includes(id));
     }).map(level => level - 1).sort((a, b) => a - b);
     return progress;
   }
@@ -147,7 +187,10 @@
       const progress = this.getProgress(packOverride);
       // Do not let a forged route skip the sequential English unlock gate.
       if (level > progress.highestUnlockedLevel) return progress;
+      const prerequisites = challengePrerequisites(challengeId);
+      if (!prerequisites) return progress;
       const list = Array.isArray(progress.completed[level]) ? progress.completed[level].slice() : [];
+      if (!prerequisites.every(id => list.includes(id))) return progress;
       if (!list.includes(challengeId)) list.push(challengeId);
       progress.completed[level] = list;
 
@@ -170,9 +213,11 @@
       const level = Math.max(1, Math.floor(safeNumber(levelNumber, 1)));
       const progress = this.getProgress(packOverride);
       if (level > progress.highestUnlockedLevel) return false;
-      if (challengeId === 'en-random') return this.isChallengeComplete(level, 'en-forward', packOverride) && this.isChallengeComplete(level, 'en-reverse', packOverride);
-      if (challengeId === 'cn-random') return this.isChallengeComplete(level, 'cn-forward', packOverride) && this.isChallengeComplete(level, 'cn-reverse', packOverride);
-      return ['en-forward', 'en-reverse', 'cn-forward', 'cn-reverse'].includes(challengeId);
+      const prerequisites = challengePrerequisites(challengeId);
+      return Boolean(prerequisites && prerequisites.every(id => {
+        const list = progress.completed[level] || [];
+        return list.includes(id);
+      }));
     },
 
     /** Number of sequential windows currently selectable in the menu. */

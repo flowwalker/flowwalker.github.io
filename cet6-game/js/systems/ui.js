@@ -23,6 +23,8 @@
   let routeSeq = 0;
   let sectionSwitching = false;
   let activeSelection = { startIndex: 0, endIndex: WORDS_PER_LEVEL, challengeId: 'en-forward' };
+  let selectionInitialized = false;
+  let reviewWords = [];
 
   // In-game world changes use a separate, non-routing gate. It can briefly
   // pause answer input while the scenery plugin swaps, but never owns the
@@ -366,7 +368,23 @@
     if (!box) return;
     box.innerHTML = '';
     const total = V8.CFG.TOTAL_LEVELS || Math.ceil(V8.WORD_PACK.words.length / WORDS_PER_LEVEL);
-    const progress = V8.storage.getProgress();
+    const max = Math.min(V8.WORD_PACK.words.length, unlocked * WORDS_PER_LEVEL);
+    if (!selectionInitialized) {
+      selectionInitialized = true;
+      const saved = V8.storage.getCustomRange();
+      const defaultEnd = Math.min(WORDS_PER_LEVEL, V8.WORD_PACK.words.length);
+      const savedIsCustom = saved && saved.start >= 1 && saved.end >= saved.start && saved.end <= max
+        && (saved.start !== 1 || saved.end !== defaultEnd);
+      if (savedIsCustom) {
+        activeSelection = {
+          startIndex: saved.start - 1,
+          endIndex: saved.end,
+          windowIndex: Math.floor((saved.start - 1) / WORDS_PER_LEVEL),
+          custom: true,
+          challengeId: 'en-forward',
+        };
+      }
+    }
     const windowButtons = document.createElement('div');
     windowButtons.className = 'window-levels';
     for (let i = 0; i < total; i++) {
@@ -377,19 +395,33 @@
       b.setAttribute('aria-label', available ? `第 ${i + 1} 关` : `未解锁：第 ${i + 1} 关`);
       const start = i * WORDS_PER_LEVEL + 1;
       const end = Math.min(V8.WORD_PACK.words.length, (i + 1) * WORDS_PER_LEVEL);
-      const completed = V8.storage.getCompleted(i + 1).length >= 4;
-      b.innerHTML = `<span class="level-number">${String(i + 1).padStart(3, '0')}</span><span class="level-title">词窗 ${start}-${end}</span><span class="level-meta">${completed ? '已完成' : available ? '可开始 · 四种方向' : '完成上一关后解锁'}</span><span class="level-state">${available ? '选择' : '🔒'}</span>`;
+      const completedModes = V8.storage.getCompleted(i + 1);
+      const completed = ['en-forward', 'en-reverse'].every(id => completedModes.includes(id));
+      b.innerHTML = `<span class="level-number">${String(i + 1).padStart(3, '0')}</span><span class="level-title">词窗 ${start}-${end}</span><span class="level-meta">${completed ? '英译汉主线已完成' : available ? '可开始 · 按顺序解锁' : '完成上一词窗英译汉正逆序后解锁'}</span><span class="level-state">${available ? '选择' : '🔒'}</span>`;
       if (available) b.onclick = () => selectWindow(i);
       windowButtons.appendChild(b);
     }
     box.appendChild(windowButtons);
     const custom = document.createElement('div');
     custom.className = 'custom-level-panel';
-    const max = Math.min(V8.WORD_PACK.words.length, unlocked * WORDS_PER_LEVEL);
-    custom.innerHTML = `<div class="custom-level-heading"><span>自定义词窗</span><small>当前可选 1-${max}</small></div><div class="custom-level-fields"><label>起始序号<input id="customStart" type="number" min="1" max="${max}" value="${Math.min(activeSelection.startIndex + 1, max)}"></label><span>至</span><label>结束序号<input id="customEnd" type="number" min="1" max="${max}" value="${Math.min(activeSelection.endIndex, max)}"></label><button class="btn-start custom-start" type="button" id="customStartBtn">应用范围</button></div><p class="custom-level-note">完成第 1-${Math.max(0, max)} 词窗后，范围会继续扩展。</p>`;
+    custom.innerHTML = `<div class="custom-level-heading"><span>自定义词窗</span><small>当前可选 1-${max}</small></div><div class="custom-level-fields"><label>起始序号<input id="customStart" type="number" min="1" max="${max}" value="${Math.min(activeSelection.startIndex + 1, max)}"></label><span>至</span><label>结束序号<input id="customEnd" type="number" min="1" max="${max}" value="${Math.min(activeSelection.endIndex, max)}"></label><button class="btn-start custom-start" type="button" id="customStartBtn">应用范围</button></div><p class="custom-level-note">完成后续词窗的英译汉正序与逆序，可选范围会继续扩展。</p>`;
     box.appendChild(custom);
     custom.querySelector('#customStartBtn').onclick = () => applyCustomSelection(max);
-    selectWindow(Math.min(activeSelection.windowIndex || 0, Math.max(0, unlocked - 1)), true);
+    const customIsValid = Boolean(activeSelection.custom)
+      && activeSelection.startIndex >= 0
+      && activeSelection.endIndex > activeSelection.startIndex
+      && activeSelection.endIndex <= max;
+    if (customIsValid) {
+      const index = Math.max(0, Math.min(total - 1, activeSelection.windowIndex || 0));
+      activeSelection.windowIndex = index;
+      document.querySelectorAll('.window-level').forEach((node, i) => node.classList.toggle('selected', i === index));
+      renderChallengeButtons(index);
+      updateReviewRange();
+      const summary = $('selectionSummary');
+      if (summary) summary.textContent = `自定义范围 ${activeSelection.startIndex + 1}-${activeSelection.endIndex} · 请选择挑战方向`;
+    } else {
+      selectWindow(Math.min(activeSelection.windowIndex || 0, Math.max(0, unlocked - 1)), true);
+    }
   }
 
   function selectWindow(windowIndex, silent) {
@@ -397,6 +429,8 @@
     const index = Math.max(0, Math.min(total - 1, Number(windowIndex) || 0));
     const start = index * WORDS_PER_LEVEL;
     activeSelection = { startIndex: start, endIndex: Math.min(V8.WORD_PACK.words.length, start + WORDS_PER_LEVEL), windowIndex: index, challengeId: activeSelection.challengeId || 'en-forward' };
+    // A deliberate standard-window click supersedes a persisted custom range.
+    if (!silent) V8.storage.setCustomRange(1, Math.min(WORDS_PER_LEVEL, V8.WORD_PACK.words.length));
     const summary = $('selectionSummary');
     if (summary) summary.textContent = `第 ${index + 1} 关 · 单词 ${start + 1}-${activeSelection.endIndex} · 请选择挑战方向`;
     document.querySelectorAll('.window-level').forEach((node, i) => node.classList.toggle('selected', i === index));
@@ -413,11 +447,18 @@
     const completedModes = V8.storage.getCompleted(levelNumber);
     box.innerHTML = '';
     LV_DEF.forEach(challenge => {
-      const random = challenge.order === 'random';
       const available = unlockedWindow && V8.storage.isChallengeUnlocked(levelNumber, challenge.id);
       const b = document.createElement('button');
       b.type = 'button'; b.className = `challenge-btn ${available ? 'btn-start' : 'btn-ghost'}`; b.disabled = !available;
-      b.innerHTML = `<span class="challenge-icon">${challenge.icon}</span><span><strong>${challenge.name}</strong><small>${available ? challenge.subtitle : random ? '先完成同方向正序与逆序' : '完成前置挑战后解锁'}</small></span><em>${completedModes.includes(challenge.id) ? '✓' : available ? '开始' : '🔒'}</em>`;
+      const lockHints = {
+        'en-reverse': '先完成英译汉正序',
+        'en-random': '先完成英译汉正序与逆序',
+        'cn-forward': '先完成英译汉正序与逆序',
+        'cn-reverse': '先完成汉译英正序',
+        'cn-random': '先完成汉译英正序与逆序',
+      };
+      const lockedText = unlockedWindow ? (lockHints[challenge.id] || '完成前置挑战后解锁') : '先解锁当前词窗';
+      b.innerHTML = `<span class="challenge-icon">${challenge.icon}</span><span><strong>${challenge.name}</strong><small>${available ? challenge.subtitle : lockedText}</small></span><em>${completedModes.includes(challenge.id) ? '✓' : available ? '开始' : '🔒'}</em>`;
       if (available) b.onclick = () => startLevel(windowIndex, challenge.id);
       box.appendChild(b);
     });
@@ -428,6 +469,7 @@
     const start = Math.max(1, Math.min(max, Number(startNode && startNode.value) || 1));
     const end = Math.max(start, Math.min(max, Number(endNode && endNode.value) || start));
     activeSelection = { startIndex: start - 1, endIndex: end, windowIndex: Math.floor((start - 1) / WORDS_PER_LEVEL), custom: true, challengeId: 'en-forward' };
+    V8.storage.setCustomRange(start, end);
     if (startNode) startNode.value = start;
     if (endNode) endNode.value = end;
     renderChallengeButtons(activeSelection.windowIndex);
@@ -437,16 +479,32 @@
   }
 
   function updateReviewRange() {
-    const words = V8.WORD_PACK.words.slice(activeSelection.startIndex || 0, activeSelection.endIndex || WORDS_PER_LEVEL);
-    V8._reviewWords = words;
-    const count = words.length;
+    const start = activeSelection.startIndex ?? 0;
+    const end = activeSelection.endIndex ?? WORDS_PER_LEVEL;
+    setReviewWords(V8.WORD_PACK.words.slice(start, end), start, end);
+  }
+
+  function setReviewWords(words, startIndex, endIndex) {
+    reviewWords = Array.isArray(words) ? words.slice() : [];
+    // Keep the old public field as a read-only compatibility mirror. Review
+    // rendering no longer reads it, so a previous route cannot override the
+    // current menu/game selection.
+    V8._reviewWords = reviewWords.slice();
+    const count = reviewWords.length;
     const counter = $('reviewSelectionInfo');
-    if (counter) counter.textContent = `当前复习 ${count} 词 · 序号 ${activeSelection.startIndex + 1}-${activeSelection.endIndex}`;
+    if (!counter) return;
+    if (Number.isFinite(startIndex) && Number.isFinite(endIndex)) {
+      counter.textContent = `当前复习 ${count} 词 · 序号 ${startIndex + 1}-${endIndex}`;
+    } else {
+      counter.textContent = `当前复习 ${count} 词`;
+    }
   }
 
   function startLevel(windowIndex, challengeId) {
     if (routeBusy) return;
-    const challenge = LV_DEF.find(item => item.id === challengeId) || LV_DEF[0];
+    const challenge = LV_DEF.find(item => item.id === challengeId);
+    const levelNumber = Number(windowIndex) + 1;
+    if (!challenge || !V8.storage.isChallengeUnlocked(levelNumber, challenge.id)) return false;
     const start = activeSelection.custom ? activeSelection.startIndex : windowIndex * WORDS_PER_LEVEL;
     const end = activeSelection.custom ? activeSelection.endIndex : Math.min(V8.WORD_PACK.words.length, start + WORDS_PER_LEVEL);
     activeSelection = { ...activeSelection, startIndex: start, endIndex: end, windowIndex, challengeId: challenge.id };
@@ -476,7 +534,7 @@
     });
   }
 
-  function returnToMenu() {
+  function returnToMenu(targetWindowIndex) {
     if (routeBusy) return false;
     V8.ac && V8.ac();
     if (V8.sfx.back) V8.sfx.back();
@@ -489,6 +547,7 @@
         stopRunForMenu();
         hideAllOverlays();
         showStartScreen();
+        if (Number.isFinite(targetWindowIndex)) selectWindow(targetWindowIndex, true);
       },
     });
     return accepted;
@@ -635,8 +694,8 @@
 
     setTimeout(() => {
       if (!liveRun(gameState, runId)) return;
-      // Record this challenge and expose the next word window only after the
-      // four ordered challenges in the current window are complete.
+      // Record this challenge. The next word window opens after this window's
+      // English forward and reverse pair is complete.
       const progress = gameState.selection && gameState.selection.custom
         ? V8.storage.getProgress()
         : V8.storage.markChallengeComplete(gameState.windowIndex + 1, gameState.challengeId);
@@ -672,7 +731,7 @@
             <div class="vic-stat"><small>剩余生命</small><strong>${gameState.hp} / ${gameState.maxHp}</strong></div>
           </div>
           <div class="vic-stamp">${new Date().toLocaleDateString('zh-CN')} · 本次成绩已记录<br><b>截图即可保存这一程的通关凭证</b></div>
-          <div class="go-btns vic-actions">${last ? '' : '<button class="btn-again" id="btnVicNext">下一关 →</button>'}<button class="${last ? 'btn-again' : 'btn-ghost'}" id="btnVicAgain">再挑战</button><button class="btn-ghost" id="btnVicRev">复习词表</button><button class="btn-ghost" id="btnVicHome">返回选关</button></div>
+          <div class="go-btns vic-actions">${last ? '' : '<button class="btn-again" id="btnVicNext">继续选关 →</button>'}<button class="${last ? 'btn-again' : 'btn-ghost'}" id="btnVicAgain">再挑战</button><button class="btn-ghost" id="btnVicRev">复习词表</button><button class="btn-ghost" id="btnVicHome">返回选关</button></div>
         </div>`;
       document.body.appendChild(d);
 
@@ -684,7 +743,7 @@
         V8.bigText('S RANK!!', '#ffd700');
       }
 
-      if (!last) $('btnVicNext').onclick = () => { if (routeBusy) return; d.remove(); selectWindow(gameState.windowIndex + 1); };
+      if (!last) $('btnVicNext').onclick = () => { if (routeBusy) return; returnToMenu(gameState.windowIndex); };
       $('btnVicAgain').onclick = () => { if (routeBusy) return; if (V8.sfx.confirm) V8.sfx.confirm(); d.remove(); rewindStart(gameState); };
       $('btnVicRev').onclick = () => { if (routeBusy) return; d.remove(); openReview(true); };
       $('btnVicHome').onclick = () => { if (routeBusy) return; returnToMenu(); };
@@ -704,6 +763,9 @@
     // A review opened from gameplay first returns from the world track to menu music.
     if (fromGame && V8.bgm) V8.bgm.boot(true);
     if (fromGame) {
+      const gameState = V8._gameState;
+      const selection = gameState && gameState.selection || {};
+      setReviewWords(gameState && gameState.words, selection.startIndex, selection.endIndex);
       stopRunForMenu();
       ['bgCanvas', 'fxCanvas', 'stage', 'wordStage', 'hud', 'distOverlay', 'inputBar', 'skillBar'].forEach(id => $(id).classList.add('hidden'));
       $('vignette').classList.remove('on'); $('vgnDanger').classList.remove('on', 'max');
@@ -712,7 +774,7 @@
     }
     $('startScreen').classList.add('hidden');
     $('reviewPanel').classList.remove('hidden');
-    if (!V8._reviewWords || !V8._reviewWords.length) updateReviewRange();
+    if (!fromGame) updateReviewRange();
     RI = 0; RR = false;
     updateReviewCard();
   }
@@ -746,9 +808,6 @@
         stopRunForMenu();
         $('reviewPanel').classList.add('hidden');
         showStartScreen({ preserveBgm: true });
-        // A victory may have unlocked the next level while review was open.
-        // Refresh the cards so returning to the menu reflects the saved progress.
-        renderLevelButtons();
         if (V8._gameState) V8._gameState.sceneSpd = 1;
       },
     });
@@ -764,7 +823,7 @@
   }
 
   function updateReviewCard() {
-    const words = (V8._reviewWords && V8._reviewWords.length) ? V8._reviewWords : (V8._gameState && V8._gameState.words ? V8._gameState.words : V8.WORD_PACK.words);
+    const words = reviewWords;
     const w = words[RI];
     if (!w) return;
     $('revMain').textContent = RM === 'cn' ? w.c[0] : (w.e + ' ' + w.p);
@@ -784,7 +843,7 @@
 
   function revealCard() { RR = true; V8.sfx.ui(); updateReviewCard(); }
   function revNav(d) {
-    const words = (V8._reviewWords && V8._reviewWords.length) ? V8._reviewWords : (V8._gameState && V8._gameState.words ? V8._gameState.words : V8.WORD_PACK.words);
+    const words = reviewWords;
     const next = Math.max(0, Math.min(words.length - 1, RI + d));
     if (next === RI) return false;
     RI = next;
