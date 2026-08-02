@@ -96,6 +96,7 @@
 
   /** Pause timer for skill (e.g. freeze). Returns resume function. */
   function freezeFor(ms, gameState) {
+    if (typeof gameState._cancelFreeze === 'function') gameState._cancelFreeze();
     // Preserve the active fraction since the last 100ms paint tick before
     // entering the frozen state, so speed-streak timing cannot gain free time.
     const freezeStarted = performance.now();
@@ -111,6 +112,7 @@
     const id = setTimeout(() => {
       gameState._timerFrozen = false;
       gameState._freezeUntil = 0;
+      gameState._cancelFreeze = null;
       gameState.lastTick = performance.now();
       updateTimerDisplay(gameState);
       document.body.classList.remove('frost');
@@ -118,14 +120,17 @@
 
     document.body.classList.add('frost');
     V8.sfx.freeze();
-    return () => {
+    const cancel = () => {
       clearTimeout(id);
       gameState._timerFrozen = false;
       gameState._freezeUntil = 0;
+      if (gameState._cancelFreeze === cancel) gameState._cancelFreeze = null;
       gameState.lastTick = performance.now();
       updateTimerDisplay(gameState);
       document.body.classList.remove('frost');
     };
+    gameState._cancelFreeze = cancel;
+    return cancel;
   }
 
   function isTimerFrozen(gameState) { return gameState._timerFrozen || false; }

@@ -433,12 +433,26 @@
   }
 
   // ── Frame update (called from game loop) ──────────────
+  function updateEffects(t, dt, k) {
+    R.shake *= .86; if (R.shake < .1) R.shake = 0;
+    R.flashA *= .9;
+
+    for (const r of R.rings) { r.r += (r.dr || 13) * k; r.a -= .028 * k; }
+    R.rings = R.rings.filter(r => r.a > 0 && r.r > 0);
+
+    for (const p of R.parts) { p.x += p.vx * k; p.y += p.vy * k; p.vy += (p.g || 0) * k; p.life -= dt; }
+    R.parts = R.parts.filter(p => p.life > 0);
+
+    if (t < R.fw && Math.random() < .13) {
+      V8.firework(.08 + Math.random() * .84, .1 + Math.random() * .5);
+      if (Math.random() < .6) V8.sfx.boom();
+    }
+  }
+
   function update(t, dt, k) {
     if (!R.lastT) R.lastT = t;
     const spd = WORLDS[R.phase].vSpeed * R.ts;
     R.scroll += spd * 2.1 * k; R.vscroll += spd * 2.6 * k;
-    R.shake *= .86; if (R.shake < .1) R.shake = 0;
-    R.flashA *= .9;
 
     // Terrain mix lerp
     if (R.terrMix && R.terrMix.t < 1) R.terrMix.t = Math.min(1, (t - R.terrMix.t0) / 800);
@@ -470,17 +484,7 @@
     }
 
     callWorldPlugin('update', { t, dt, k });
-
-    // Rings
-    for (const r of R.rings) { r.r += (r.dr || 13) * k; r.a -= .028 * k; }
-    R.rings = R.rings.filter(r => r.a > 0 && r.r > 0);
-
-    // Particles
-    for (const p of R.parts) { p.x += p.vx * k; p.y += p.vy * k; p.vy += (p.g || 0) * k; p.life -= dt; }
-    R.parts = R.parts.filter(p => p.life > 0);
-
-    // Victory fireworks
-    if (t < R.fw && Math.random() < .13) { V8.firework(.08 + Math.random() * .84, .1 + Math.random() * .5); if (Math.random() < .6) V8.sfx.boom(); }
+    updateEffects(t, dt, k);
   }
 
   /** Optional world-owned player motion, such as the ice-cliff launch. */
@@ -501,7 +505,7 @@
   }
 
   V8.render = {
-    boot, update, drawBG, drawFX, sizeCanvases,
+    boot, update, updateEffects, drawBG, drawFX, sizeCanvases,
     groundY, syncCharToGround, terrainAt,
     initWorldStructs, copySky, updateWorldPlayer,
     // Expose R for particle/entity systems

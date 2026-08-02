@@ -52,10 +52,9 @@
     RENDER.R.paling = true;
     RENDER.R.flashA = .5;
     if (announce !== false) {
-      V8.bigText(next.icon + ' ' + next.name, '#7df9ff');
       // A world-only gate masks the plugin reset and palette handoff without
-      // using the menu route lock. The final-word completion path returns
-      // before this function, so victory remains visually uninterrupted.
+      // using the menu route lock. Its core already names the destination,
+      // so a second central announcement would only repeat it afterwards.
       if (V8.ui && typeof V8.ui.showWorldTransition === 'function') {
         V8.ui.showWorldTransition(oldPhase, nextPhase, gameState);
       } else {

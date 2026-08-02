@@ -2,8 +2,8 @@
 (function(V8) {
   'use strict';
 
-  // Resolve from this script rather than from the host HTML. The shared
-  // engine is used both by templates/game_v8/ and sibling dayN/ pages.
+  // Resolve from this script rather than from the host HTML. The standalone
+  // v13 template and its blog deployment share this asset manifest.
   const scriptURL = document.currentScript && document.currentScript.src;
   const ASSET_ROOT = scriptURL ? new URL('../../assets/', scriptURL).href : 'assets/';
   const ROOT = ASSET_ROOT + 'qt/';

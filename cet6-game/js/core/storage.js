@@ -1,5 +1,5 @@
 /**
- * Storage — localStorage wrapper for blog vocabulary progress.
+ * Storage — localStorage wrapper for the v13 blog vocabulary game.
  *
  * Progress is namespaced by the active word-pack fingerprint. A changed
  * workbook therefore starts with a clean unlock map while audio/preferences
@@ -9,7 +9,9 @@
 (function(V8) {
   'use strict';
 
-  const PREFIX = 'cet6_blog_v1_';
+  // Write only v13 keys, but migrate an existing blog/standalone save on first read.
+  const PREFIX = 'cet6_v13_';
+  const LEGACY_PREFIXES = ['cet6_blog_v1_', 'cet6_v12_', 'cet6_v11_'];
   function levelSize() {
     // storage.js is loaded before config.js by the legacy HTML shell, so read
     // the value lazily instead of capturing an empty V8.CFG object at boot.
@@ -139,10 +141,26 @@
 
   const Storage = {
     get(key, fallback) {
+      let current;
       try {
-        const value = localStorage.getItem(PREFIX + key);
-        return value === null ? fallback : JSON.parse(value);
-      } catch (error) { return fallback; }
+        current = localStorage.getItem(PREFIX + key);
+      } catch (error) {
+        return fallback;
+      }
+      if (current !== null) {
+        try { return JSON.parse(current); } catch (error) { return fallback; }
+      }
+      for (const legacyPrefix of LEGACY_PREFIXES) {
+        let legacy;
+        try { legacy = localStorage.getItem(legacyPrefix + key); } catch (error) { continue; }
+        if (legacy === null) continue;
+        try {
+          const value = JSON.parse(legacy);
+          try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch (error) {}
+          return value;
+        } catch (error) {}
+      }
+      return fallback;
     },
 
     set(key, value) {

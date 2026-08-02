@@ -27,7 +27,17 @@
 (function () {
   var skin = 'blue';
   try {
-    var saved = localStorage.getItem('cet6_v11_start_skin');
+    var saved = localStorage.getItem('cet6_v13_start_skin');
+    if (saved !== 'pink' && saved !== 'blue') {
+      var legacyKeys = ['cet6_v12_start_skin', 'cet6_v11_start_skin'];
+      for (var i = 0; i < legacyKeys.length; i++) {
+        saved = localStorage.getItem(legacyKeys[i]);
+        if (saved === 'pink' || saved === 'blue') {
+          localStorage.setItem('cet6_v13_start_skin', saved);
+          break;
+        }
+      }
+    }
     if (saved === 'pink' || saved === 'blue') skin = saved;
   } catch (e) {}
   window.START_SKIN = skin;
@@ -73,7 +83,7 @@
       <div class="start-title-row">
         <div class="start-seal" aria-hidden="true"><span>🚀</span></div>
         <div class="start-title-copy">
-          <h1>单词跑酷<small>V11</small></h1>
+          <h1>单词跑酷<small>V13</small></h1>
           <div class="sub" id="startSub">CET-6 · Day 1 · 三组任选 · 四关递进</div>
         </div>
       </div>
@@ -86,7 +96,7 @@
     </div>
     <div class="section-picker blog-picker" id="sectionPicker" aria-label="选择词表与皮肤">
       <button type="button" class="start-skin-toggle" id="startSkinToggle" title="切换开始界面皮肤" aria-label="切换开始界面皮肤" onclick="toggleStartSkin()">
-        <span class="skin-toggle-icon" aria-hidden="true">⛰️</span><span class="skin-toggle-label">梦幻粉</span>
+        <span class="skin-toggle-icon" aria-hidden="true">🌸</span><span class="skin-toggle-label">梦幻粉</span>
       </button>
     </div>
     <div class="section-help" id="sectionHelp">加载全量词表中…</div>

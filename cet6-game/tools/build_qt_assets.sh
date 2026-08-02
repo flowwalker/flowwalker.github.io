@@ -4,9 +4,9 @@ set -eu
 GAME_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 QT_IMAGES=${QT_IMAGES:-"$GAME_DIR/../Qt-Gaming-main/images"}
 OUT_DIR="$GAME_DIR/assets/qt"
-TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/game-v8-qt-assets.XXXXXX")
+TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/game-v13-qt-assets.XXXXXX")
 WORKSPACE_DIR=$(CDPATH= cd -- "$GAME_DIR/../../../.." && pwd)
-TRASH_DIR="$WORKSPACE_DIR/.Trash/game_v8_asset_build"
+TRASH_DIR="$WORKSPACE_DIR/.Trash/game_v13_asset_build"
 
 cleanup() {
     if test -d "$TMP_DIR"; then

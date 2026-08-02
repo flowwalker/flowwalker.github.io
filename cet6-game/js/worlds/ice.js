@@ -4,6 +4,7 @@
 
   const TAU = Math.PI * 2;
   const TERRAIN_PERIOD = 4200;
+  const SNOW_BUCKET_COUNT = 3;
   // Keep the long downhill run inside the lower viewport as the camera scrolls.
   // All ground-relative elements (skateboard, snow trail and cliff faces) use
   // groundY, so lifting the terrain here moves the complete playable surface.
@@ -26,6 +27,16 @@
   function smoothstep(value) {
     const p = clamp01(value);
     return p * p * (3 - 2 * p);
+  }
+
+  function useLowDetail(ctx) {
+    const width = Math.max(0, Number(ctx && ctx.w) || 0);
+    const height = Math.max(0, Number(ctx && ctx.h) || 0);
+    // Phones have a much smaller CSS canvas and already sustain full detail.
+    if (Math.min(width, height) <= 640) return false;
+    const dpr = Math.max(1, Number(ctx && ctx.R && ctx.R.dpr) || window.devicePixelRatio || 1);
+    const cssPixels = width * height;
+    return cssPixels >= 1200000 || cssPixels * dpr * dpr >= 3000000;
   }
 
   function terrainHeight(worldDistance) {
@@ -89,31 +100,44 @@
 
   function init(ctx) {
     terrainOrigin = ctx.R.scroll;
+    const lowDetail = useLowDetail(ctx);
     const snow = [];
-    for (let i = 0; i < 270; i++) {
-      snow.push({
+    const snowTiers = Array.from({ length: 3 }, () =>
+      Array.from({ length: SNOW_BUCKET_COUNT }, () => []));
+    const snowCount = lowDetail ? 180 : 270;
+    for (let i = 0; i < snowCount; i++) {
+      const size = .55 + noise(i + 149) * 2.25;
+      const tier = i % 3;
+      const bucket = Math.min(SNOW_BUCKET_COUNT - 1, Math.floor((size - .55) / .75));
+      const flake = {
         x: noise(i + 7),
         y: noise(i + 83),
-        size: .55 + noise(i + 149) * 2.25,
+        size,
         speed: .62 + noise(i + 211) * 1.35,
         phase: noise(i + 263) * TAU,
-        tier: i % 3,
-      });
+        tier,
+        normal: Math.floor(i / 3) % 2 === 0,
+      };
+      snow.push(flake);
+      snowTiers[tier][bucket].push(flake);
     }
     let reduceMotion = false;
     try { reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) {}
 
     return {
       origin: terrainOrigin,
+      lowDetail,
       snow,
+      snowTiers,
+      terrainProfile: [],
       mountains: [
-        makeMountainLayer(0, 11, 1760, .075),
-        makeMountainLayer(1, 13, 1580, .15),
+        makeMountainLayer(0, lowDetail ? 8 : 11, 1760, .075),
+        makeMountainLayer(1, lowDetail ? 9 : 13, 1580, .15),
       ],
       pines: [
-        makePineLayer(0, 31, 1390, .19),
-        makePineLayer(1, 25, 1510, .38),
-        makePineLayer(2, 19, 1660, .72),
+        makePineLayer(0, lowDetail ? 20 : 31, 1390, .19),
+        makePineLayer(1, lowDetail ? 16 : 25, 1510, .38),
+        makePineLayer(2, lowDetail ? 12 : 19, 1660, .72),
       ],
       blizzardStarted: -Infinity,
       blizzardUntil: 0,
@@ -263,7 +287,7 @@
     }
   }
 
-  function drawAuroraRibbon(ctx, index, intensity) {
+  function drawAuroraRibbon(ctx, index, intensity, step) {
     const x = ctx.x;
     const w = ctx.w;
     const h = ctx.h;
@@ -285,11 +309,11 @@
     gradient.addColorStop(1, colors[3]);
     x.fillStyle = gradient;
     x.beginPath();
-    for (let px = -30; px <= w + 30; px += 16) {
+    for (let px = -30; px <= w + 30; px += step) {
       const top = baseY + Math.sin(px / (126 + index * 18) + phase) * amplitude + Math.sin(px / 47 - phase * .63) * amplitude * .18;
       if (px === -30) x.moveTo(px, top); else x.lineTo(px, top);
     }
-    for (let px = w + 30; px >= -30; px -= 16) {
+    for (let px = w + 30; px >= -30; px -= step) {
       const top = baseY + Math.sin(px / (126 + index * 18) + phase) * amplitude + Math.sin(px / 47 - phase * .63) * amplitude * .18;
       const curtain = thickness * (.60 + .40 * Math.pow(Math.sin(px / 102 + phase + index), 2));
       x.lineTo(px, top + curtain);
@@ -303,13 +327,17 @@
     const event = auroraStrength(ctx);
     const breathe = .18 + .07 * Math.sin(ctx.t * .00075);
     const intensity = breathe + event;
+    const lowDetail = ctx.state.lowDetail;
+    const ribbonCount = lowDetail ? 3 : 4;
+    const foldCount = lowDetail ? 5 : 9;
+    const ribbonStep = lowDetail ? 24 : 16;
     x.save();
     x.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 4; i++) drawAuroraRibbon(ctx, i, intensity);
+    for (let i = 0; i < ribbonCount; i++) drawAuroraRibbon(ctx, i, intensity, ribbonStep);
 
     // Delicate vertical folds make the ribbons read as translucent curtains.
-    for (let i = 0; i < 9; i++) {
-      const sx = ctx.w * (i + .3) / 9 + Math.sin(ctx.t * .00032 + i) * 22;
+    for (let i = 0; i < foldCount; i++) {
+      const sx = ctx.w * (i + .3) / foldCount + Math.sin(ctx.t * .00032 + i) * 22;
       const fold = x.createLinearGradient(sx, ctx.h * .08, sx + 18, ctx.h * .54);
       fold.addColorStop(0, `rgba(143,255,226,${.018 + event * .035})`);
       fold.addColorStop(.62, `rgba(120,185,255,${.030 + event * .050})`);
@@ -408,8 +436,9 @@
     x.globalAlpha = alpha;
     x.fillStyle = layerIndex === 0 ? '#153e52' : layerIndex === 1 ? '#0c3448' : '#062636';
     x.fillRect(sx - 1.5, baseY - height * .56, 3, height * .59);
-    for (let tier = 0; tier < 6; tier++) {
-      const p = tier / 5;
+    const tierCount = ctx.state.lowDetail ? 4 : 6;
+    for (let tier = 0; tier < tierCount; tier++) {
+      const p = tier / (tierCount - 1);
       const cy = baseY - height * (.88 - p * .135);
       const half = width * (.22 + p * .78);
       x.fillStyle = layerIndex === 0 ? '#1b5263' : layerIndex === 1 ? '#0e4557' : '#083748';
@@ -432,23 +461,29 @@
   function drawSnowTier(ctx, tier) {
     const x = ctx.x;
     const storm = blizzardStrength(ctx);
+    const stormActive = ctx.t >= ctx.state.blizzardStarted && ctx.t < ctx.state.blizzardUntil;
+    const buckets = ctx.state.snowTiers[tier];
     x.save();
-    for (let i = 0; i < ctx.state.snow.length; i++) {
-      const flake = ctx.state.snow[i];
-      if (flake.tier !== tier) continue;
-      // Normal weather uses half the field; the 3 s event reveals all flakes.
-      if (storm < .08 && i % 2) continue;
-      const sx = flake.x * ctx.w + Math.sin(ctx.t * .0008 + flake.phase) * (2 + tier * 2);
-      const sy = flake.y * ctx.h;
-      const alpha = (.17 + tier * .12 + flake.size * .07) * (1 + storm * .42);
-      const length = flake.size * (.65 + tier * .72) * (1 + storm * (2.3 + tier * .55));
+    x.lineCap = 'round';
+    for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex++) {
+      const bucket = buckets[bucketIndex];
+      const nominalSize = .925 + bucketIndex * .75;
+      const alpha = (.17 + tier * .12 + nominalSize * .07) * (1 + storm * .42);
       x.strokeStyle = `rgba(239,252,255,${Math.min(.92, alpha)})`;
-      x.lineWidth = Math.max(.55, flake.size * (.24 + tier * .10));
-      x.lineCap = 'round';
+      x.lineWidth = Math.max(.55, nominalSize * (.24 + tier * .10));
       x.beginPath();
-      x.moveTo(sx, sy);
-      x.lineTo(sx - length * (1.1 + storm * 1.9), sy + length * (1.05 + storm * .54));
-      x.stroke();
+      let visible = 0;
+      for (const flake of bucket) {
+        // Every tier contains 60 low-detail flakes: 30 normal, 60 in storms.
+        if (!stormActive && !flake.normal) continue;
+        const sx = flake.x * ctx.w + Math.sin(ctx.t * .0008 + flake.phase) * (2 + tier * 2);
+        const sy = flake.y * ctx.h;
+        const length = flake.size * (.65 + tier * .72) * (1 + storm * (2.3 + tier * .55));
+        x.moveTo(sx, sy);
+        x.lineTo(sx - length * (1.1 + storm * 1.9), sy + length * (1.05 + storm * .54));
+        visible++;
+      }
+      if (visible) x.stroke();
     }
     x.restore();
   }
@@ -474,11 +509,18 @@
     eachWorldItem(ctx, ctx.state.pines[2], (pine, sx) => drawPine(ctx, pine, sx, 2));
   }
 
-  function traceTerrain(ctx) {
+  function sampleTerrain(ctx) {
+    const profile = ctx.state.terrainProfile;
+    profile.length = 0;
+    for (let px = -20; px <= ctx.w + 24; px += 6) profile.push(ctx.groundY(px));
+    return profile;
+  }
+
+  function traceTerrain(ctx, profile) {
     const x = ctx.x;
     x.beginPath();
     x.moveTo(-20, ctx.h + 20);
-    for (let px = -20; px <= ctx.w + 24; px += 6) x.lineTo(px, ctx.groundY(px));
+    for (let i = 0; i < profile.length; i++) x.lineTo(-20 + i * 6, profile[i]);
     x.lineTo(ctx.w + 24, ctx.h + 20);
     x.closePath();
   }
@@ -532,8 +574,9 @@
 
   function drawTerrain(ctx) {
     const x = ctx.x;
+    const profile = sampleTerrain(ctx);
     x.save();
-    traceTerrain(ctx);
+    traceTerrain(ctx, profile);
     const snow = x.createLinearGradient(0, ctx.h * .68, 0, ctx.h);
     snow.addColorStop(0, '#e8fbff');
     snow.addColorStop(.075, '#bceaf4');
@@ -545,13 +588,15 @@
 
     // Broad buried bands show that this is a mass of translucent glacial ice.
     x.save();
-    traceTerrain(ctx);
+    traceTerrain(ctx, profile);
     x.clip();
-    for (let i = 0; i < 5; i++) {
+    const bandCount = ctx.state.lowDetail ? 3 : 5;
+    const bandStep = ctx.state.lowDetail ? 24 : 18;
+    for (let i = 0; i < bandCount; i++) {
       x.strokeStyle = `rgba(196,244,255,${.075 - i * .008})`;
       x.lineWidth = 1.2 + i * .35;
       x.beginPath();
-      for (let px = -30; px <= ctx.w + 30; px += 18) {
+      for (let px = -30; px <= ctx.w + 30; px += bandStep) {
         const py = ctx.groundY(px) + 34 + i * 31 + Math.sin((px + ctx.R.scroll * .18) / (73 + i * 14)) * 7;
         if (px === -30) x.moveTo(px, py); else x.lineTo(px, py);
       }
@@ -566,9 +611,10 @@
     x.lineWidth = 7;
     x.lineJoin = 'round';
     x.beginPath();
-    for (let px = -20; px <= ctx.w + 24; px += 6) {
-      const py = ctx.groundY(px) - 1;
-      if (px === -20) x.moveTo(px, py); else x.lineTo(px, py);
+    for (let i = 0; i < profile.length; i++) {
+      const px = -20 + i * 6;
+      const py = profile[i] - 1;
+      if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
     }
     x.stroke();
     x.strokeStyle = 'rgba(121,229,255,.76)';
@@ -576,9 +622,10 @@
     x.shadowBlur = 9;
     x.lineWidth = 1.5;
     x.beginPath();
-    for (let px = -20; px <= ctx.w + 24; px += 6) {
-      const py = ctx.groundY(px) + 1;
-      if (px === -20) x.moveTo(px, py); else x.lineTo(px, py);
+    for (let i = 0; i < profile.length; i++) {
+      const px = -20 + i * 6;
+      const py = profile[i] + 1;
+      if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
     }
     x.stroke();
     x.shadowBlur = 0;
@@ -623,6 +670,8 @@
 
     // Repeating crystal spray appears to peel away from the board's tail.
     x.globalCompositeOperation = 'lighter';
+    x.shadowColor = '#a7f3ff';
+    x.shadowBlur = ctx.state.lowDetail ? 0 : 5;
     for (let i = 0; i < 14; i++) {
       const age = mod(ctx.t * (.085 + (i % 3) * .009) + i * 31, 230);
       const p = age / 230;
@@ -632,8 +681,6 @@
       const alpha = (1 - p) * (.38 + noise(i + 130) * .42);
       const size = 1.1 + noise(i + 150) * 2.3;
       x.fillStyle = `rgba(209,252,255,${alpha})`;
-      x.shadowColor = '#a7f3ff';
-      x.shadowBlur = 5;
       x.beginPath();
       x.moveTo(sx, sy - size);
       x.lineTo(sx + size * .65, sy);

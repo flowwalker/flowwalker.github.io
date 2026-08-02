@@ -1,47 +1,33 @@
-# CET-6 单词跑酷博客版
+# CET-6 单词跑酷博客版 v13
 
-这是可直接放入 Hexo `source/cet6-game/` 的静态游戏。入口是 `index.html`，不再依赖 Day/Section 路由或服务器端接口；词表、音乐、图片和引擎都在本目录内。
+这是可直接部署到 Hexo `source/cet6-game/` 的完整词表游戏。入口为 `index.html`，包含 5523 词、111 个 50 词窗口、九个世界、龙伙伴、本地 BGM 和共享解锁表，不依赖服务器接口。
 
-## 词表与选关
+## 部署
 
-`data/words.js` 是由 CET-6 工作簿 B（英文）、C（音标）、E（重点释义）生成的 JSON 风格词表。当前共 5523 词，按 50 词切成 111 个词窗，最后一窗为 5501-5523 的 23 词。开始页显示可解锁词窗：完成当前词窗的英译汉正序和逆序后，下一词窗开放，自定义范围上限同步增加（例如开放到第 3 窗即可选择 1-150）。
-
-每个词窗按以下顺序开放挑战：英译汉正序 → 英译汉逆序；完成这两项后，同时开放汉译英正序与英译汉随机；完成汉译英正序后开放汉译英逆序；最后开放汉译英随机。进度和自定义范围保存于浏览器 `localStorage`，并按词表指纹隔离，替换词表会自动得到独立进度。
-
-`data/progress.js` 是可提交、可跨设备同步的共享进度基线。当前基线记录第 1-9 关已完成英译汉正序与逆序，因此第 10 关开放。游戏启动时会把它与本机 `localStorage` 进度合并；个人继续完成的关卡只先保存在本机。要让其他设备看到最新进度，请更新 `data/progress.js` 后同步整个 `cet6-game/` 目录。
-
-## 本地检查
-
-可直接双击 `index.html` 打开。模拟博客目录也可使用：
-
-```bash
-cd tasks/blog-cet6-source/cet6-game
-python3 -m http.server 8123
-```
-
-修改词表后重新生成：
-
-```bash
-/Users/focus/miniconda3/bin/python tasks/cet6/scripts/gen_blog_words.py
-```
-
-## 部署到 Hexo
-
-将整个 `cet6-game/` 复制到博客的 `source/`，并在 `_config.yml` 中加入：
+在 Hexo `_config.yml` 中保留：
 
 ```yaml
 skip_render:
   - "cet6-game/**"
 ```
 
-构建后访问 `/cet6-game/`。该配置让 Hexo 原样复制 HTML、JS、CSS、BGM 和 GIF，不会把它们当作文章渲染。
+Hexo 会原样复制本目录的 HTML、JavaScript、CSS、图片与音频。构建部署后访问 `/cet6-game/`。
 
-## 目录说明
+## 词表与进度
 
-- `index.html`：博客入口和选关界面。
-- `data/words.js`：全量词表数据。
-- `data/progress.js`：可同步的共享解锁基线。
-- `js/`：游戏引擎、世界皮肤、音频和进度逻辑。
-- `css/`：开始页、选关页、游戏 HUD 与转场样式。
-- `assets/`、`bgm/`：本地视觉与音频资源。
-- `PROBLEM.md`：仅记录待实际体验确认的问题，不在本次部署中自动修复。
+- `data/words.js`：由 CET-6 工作簿 B（英文）、C（音标）、E（重点释义）生成。
+- `data/progress.js`：可随代码跨设备同步的共享解锁基线，目前开放至第 10 关。
+- 设备上的后续记录保存在 `localStorage`。v13 首次读取时会迁移旧博客版和 v12 的同词表进度及偏好，并兼容 v11 的开始皮肤与通用偏好；之后统一写入 `cet6_v13_` 键。
+- 要跨设备同步新增进度，请更新 `data/progress.js` 的 `completed`，再重新部署本目录。
+
+挑战顺序为英译汉正序、英译汉逆序；完成两项后开放英译汉随机和汉译英正序；随后依次开放汉译英逆序与随机。
+
+## 本地检查
+
+直接打开 `index.html`，或在本目录运行：
+
+```bash
+python3 -m http.server 8123
+```
+
+修改后检查桌面 1440x900、手机 390x844、开始页、选关、复习、世界转场、结算及 BGM。v12 审计项的修复和回归结果见 `PROBLEM.md`；规范版本保存在 `tasks/cet6/templates/game_v13/`。

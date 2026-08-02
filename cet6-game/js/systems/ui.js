@@ -36,13 +36,23 @@
 
   // The menu skin is intentionally separate from the playable world plugins.
   // It only changes the start-page palette/background and its menu soundtrack.
-  const START_SKIN_KEY = 'cet6_v11_start_skin';
+  const START_SKIN_KEY = 'cet6_v13_start_skin';
+  const LEGACY_START_SKIN_KEYS = ['cet6_v12_start_skin', 'cet6_v11_start_skin'];
   let startSkin = 'blue';
 
   function readStartSkin() {
     let saved = window.START_SKIN;
     try {
-      const persisted = window.localStorage.getItem(START_SKIN_KEY);
+      let persisted = window.localStorage.getItem(START_SKIN_KEY);
+      if (persisted !== 'blue' && persisted !== 'pink') {
+        for (const legacyKey of LEGACY_START_SKIN_KEYS) {
+          persisted = window.localStorage.getItem(legacyKey);
+          if (persisted === 'blue' || persisted === 'pink') {
+            window.localStorage.setItem(START_SKIN_KEY, persisted);
+            break;
+          }
+        }
+      }
       if (persisted === 'blue' || persisted === 'pink') saved = persisted;
     } catch (e) {}
     return saved === 'pink' ? 'pink' : 'blue';
@@ -160,6 +170,9 @@
     state.lock = Boolean(state._worldShiftPreviousLock);
     state._worldShiftLock = false;
     delete state._worldShiftPreviousLock;
+    const canAnswer = V8._gameState === state && state.started && !state.over && !state.dead && !state.rdy && !state.lock;
+    setInputEnabled(canAnswer);
+    if (canAnswer) focusInput();
   }
 
   function clearWorldTransition(restoreLock) {
@@ -167,11 +180,14 @@
     clearTimeout(worldShiftCleanupTimer);
     worldShiftCleanupTimer = null;
     const state = worldShiftState;
+    const runId = state && state.runId;
+    const interrupted = Boolean(worldShiftNode || state);
     if (worldShiftNode) worldShiftNode.remove();
     worldShiftNode = null;
     worldShiftState = null;
     document.body.classList.remove('world-shifting');
     if (restoreLock !== false && state && V8._gameState === state) restoreWorldShiftLock(state);
+    if (interrupted && V8.bus) V8.bus.emit('world:shift:cancel', { gameState: state, runId });
   }
 
   /**
@@ -220,7 +236,9 @@
     gameState._worldShiftPreviousLock = Boolean(gameState.lock);
     gameState._worldShiftLock = true;
     gameState.lock = true;
+    setInputEnabled(false);
     document.body.classList.add('world-shifting');
+    if (V8.bus) V8.bus.emit('world:shift:start', { gameState, runId });
     V8.ac && V8.ac();
     playSfx('transition', 'portal');
     requestAnimationFrame(() => {
@@ -245,7 +263,10 @@
       worldShiftState = null;
       worldShiftCleanupTimer = null;
       document.body.classList.remove('world-shifting');
-      if (V8._gameState === gameState && gameState.runId === runId && !gameState.over) restoreWorldShiftLock(gameState);
+      if (V8._gameState === gameState && gameState.runId === runId && !gameState.over) {
+        restoreWorldShiftLock(gameState);
+        if (V8.bus) V8.bus.emit('world:shift:end', { gameState, runId });
+      }
     }, total);
     return true;
   }
@@ -325,8 +346,8 @@
     if (levels) levels.classList.remove('hidden');
     if (browse) browse.classList.remove('hidden');
     if (help) help.textContent = `共 ${pack.words.length} 词 · 每关 ${WORDS_PER_LEVEL} 词 · 完成英译汉正序与逆序后解锁下一词窗`;
-    if ($('startSub')) $('startSub').textContent = `CET-6 · ${pack.title} · ${pack.words.length} 词 · 每关 ${WORDS_PER_LEVEL} 词`;
-    document.title = `⭐ CET-6 单词跑酷 · ${pack.title}`;
+    if ($('startSub')) $('startSub').textContent = `${pack.title} · ${pack.words.length} 词 · 每关 ${WORDS_PER_LEVEL} 词`;
+    document.title = `⭐ CET-6 单词跑酷 v13 · ${pack.title}`;
   }
 
   // Kept as a compatibility no-op for old inline links/bookmarks.
@@ -568,6 +589,7 @@
     $('startScreen').classList.add('hidden');
     $('reviewPanel').classList.add('hidden');
     if (V8.streak) V8.streak.cleanup();
+    if (V8.clearBigText) V8.clearBigText();
     document.querySelectorAll('.go-overlay,.vic-overlay,.title-card,#rdy,.coin,.gem,.dust,.flame,.ufo,.big-text,.float-text,.ghost-float,.kbubble,.can,.critter,.beam,.cow,.pet,.qt-impact,.qt-fire-projectile,.v8-streak-fx,.skip-answer-reveal').forEach(n => n.remove());
     $('vignette').classList.remove('on');
     $('vgnDanger').classList.remove('on', 'max');
@@ -600,6 +622,7 @@
   // ── Game Over screen ──────────────────────────────────
   function showGameOver(gameState, word, reason) {
     clearWorldTransition(true);
+    if (V8.clearBigText) V8.clearBigText();
     $('vignette').classList.remove('on');
     gameState.sceneSpd = .35;
     updateSpeed(gameState);
@@ -665,8 +688,6 @@
     V8.render.R.ts = -1.8; V8.render.R.tsT = -1.8;
     V8.render.R.rings.push({ r: 320, a: .9, dr: -24, col: 'rgba(255,255,255,A)', x: V8.render.R.w / 2, y: V8.render.R.h * .45 });
     V8.sfx.boom();
-    // A retry is a fresh run even when it stays in the same skin.
-    if (V8.bgm) V8.bgm.switchTrack(gameState.phase);
     const runId = gameState.runId;
     setTimeout(() => {
       if (!liveRun(gameState, runId)) return;
@@ -679,12 +700,15 @@
   }
 
   // ── Victory screen ────────────────────────────────────
-  function showVictory(gameState) {
+  function showVictory(gameState, options) {
+    options = options || {};
     // A normal world shift cannot reach the completion branch, but clearing
     // here makes the invariant explicit for debug/replay paths as well.
     clearWorldTransition(true);
     if (gameState.over) return;
     gameState.over = true; gameState.lock = true;
+    const streakTier = Number(options.streakTier) || 0;
+    if (typeof V8._stopRunLoops === 'function') V8._stopRunLoops(gameState, { preserveStreak: streakTier > 0 });
     const runId = gameState.runId;
     V8.sfx.win();
     gameState.sceneSpd = 1.25; updateSpeed(gameState);
@@ -692,8 +716,13 @@
     V8.render.R.shake = 5;
     V8.ringFX('rgb(255,215,0)'); V8.ringFX('rgb(125,249,255)');
 
+    const rewardDuration = V8.streak && typeof V8.streak.durationForTier === 'function'
+      ? V8.streak.durationForTier(streakTier) : 0;
+    const resultDelay = Math.max(1100, rewardDuration + 120);
     setTimeout(() => {
       if (!liveRun(gameState, runId)) return;
+      if (V8.clearBigText) V8.clearBigText();
+      if (streakTier > 0 && V8.streak) V8.streak.cleanup();
       // Record this challenge. The next word window opens after this window's
       // English forward and reverse pair is complete.
       const progress = gameState.selection && gameState.selection.custom
@@ -737,10 +766,14 @@
 
       // S-rank: extra celebration
       if (rank.grade === 'S') {
+        const badge = document.createElement('div');
+        badge.className = 'vic-rank-burst';
+        badge.textContent = 'S RANK';
+        d.querySelector('.vic-card').appendChild(badge);
+        setTimeout(() => badge.remove(), 1800);
         for (let i = 0; i < 5; i++) setTimeout(() => {
           if (liveRun(gameState, runId)) V8.firework(.2 + Math.random() * .6, .1 + Math.random() * .5);
         }, i * 200);
-        V8.bigText('S RANK!!', '#ffd700');
       }
 
       if (!last) $('btnVicNext').onclick = () => { if (routeBusy) return; returnToMenu(gameState.windowIndex); };
@@ -748,7 +781,7 @@
       $('btnVicRev').onclick = () => { if (routeBusy) return; d.remove(); openReview(true); };
       $('btnVicHome').onclick = () => { if (routeBusy) return; returnToMenu(); };
       (last ? $('btnVicAgain') : $('btnVicNext')).focus();
-    }, 1100);
+    }, resultDelay);
   }
 
   // ── Review mode ────────────────────────────────────────
@@ -911,10 +944,10 @@
 
   function toggleAllMute() {
     const allMuted = V8.storage.getBgmMuted() && V8.storage.getSfxMuted();
-    V8.storage.setBgmMuted(!allMuted);
+    if (V8.bgm && typeof V8.bgm.setMuted === 'function') V8.bgm.setMuted(!allMuted);
+    else V8.storage.setBgmMuted(!allMuted);
     V8.storage.setSfxMuted(!allMuted);
     V8.SFX_MUTED = !allMuted;
-    if (V8.bgm.el) V8.bgm.el.muted = !allMuted;
     updateMuteBtnDisplay();
     if (!V8.SFX_MUTED) V8.sfx.ui();
   }

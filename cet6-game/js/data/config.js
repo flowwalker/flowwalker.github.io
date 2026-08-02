@@ -181,12 +181,11 @@
     { n: '阴森可怖 · 深渊坠落备用', s: bgmRoot + 'world-abyss-scary.mp3' },
     { n: 'faded · 星空 / 冰原备用', s: bgmRoot + 'world-star-faded.mp3' },
     { n: '左窜右逃 · 赛博雨夜备用', s: bgmRoot + 'world-cyber-chase.m4a', gain: 2 },
-    { n: 'Volatile Reaction · 未启用', s: bgmRoot + 'Volatile_Reaction.mp3' },
     { n: 'Overworld · 樱落庭院备用', s: bgmRoot + 'Overworld.mp3' },
   ];
   const BGM_GROUPS = [
     [0, 10], [1, 11], [2, 12], [3, 13], [4, 14],
-    [5], [6, 14], [7, 15], [8, 5], [9, 17],
+    [5], [6, 14], [7, 15], [8, 5], [9, 16],
   ];
 
   // ── Pixel character palette & maps ─────────────────────

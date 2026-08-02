@@ -1382,6 +1382,26 @@ body[data-phase="2"] .abyss-cloud { opacity: 1; animation: abyssCloudDrift 1.3s 
 }
 .vic-card::before { top: 16px; }
 .vic-card::after { bottom: 14px; }
+.vic-rank-burst {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
+  color: #ffe29a;
+  font-family: 'Courier New', 'SimHei', monospace;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0;
+  text-shadow: 0 0 18px rgba(255,226,154,.8);
+  animation: vicRankBurst 1.75s ease forwards;
+  pointer-events: none;
+}
+@keyframes vicRankBurst {
+  0% { opacity: 0; transform: scale(.5); }
+  18% { opacity: 1; transform: scale(1.12); }
+  34% { transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-18px) scale(1.04); }
+}
 .vic-eyebrow {
   color: #aec8f4;
   font-family: 'Courier New', 'SimHei', monospace;

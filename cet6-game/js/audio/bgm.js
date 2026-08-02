@@ -1,5 +1,5 @@
 /**
- * BGM — one preloaded Audio element per menu/world track variant.
+ * BGM — lazily loaded menu/world track variants.
  * A skin change randomly selects a variant, rewinds it, then crossfades from
  * the old world only after the new file can play.
  */
@@ -10,15 +10,14 @@
   const MENU_GROUP = 0;
   const BASE_VOLUME = .35;
   const FADE_MS = 850;
-  const NAV_HANDOFF_KEY = 'cet6_v11_bgm_handoff';
-  const NAV_HANDOFF_PARAM = '_v11bgm';
+  const NAV_HANDOFF_KEY = 'cet6_v13_bgm_handoff';
+  const NAV_HANDOFF_PARAM = '_v13bgm';
   const NAV_HANDOFF_TTL = 20000;
   const tracks = new Map();
   let activeIndex = null;
   let pendingRestore = null;
   let fadeToken = 0;
   let retryTimer = null;
-  let warmScheduled = false;
   let bgmMuted = V8.storage.getBgmMuted();
   let bgmStopped = V8.storage.getBgmStopped ? V8.storage.getBgmStopped() : false;
   const lastPickByGroup = new Map();
@@ -51,9 +50,17 @@
     return pickTrack(group);
   }
 
-  function syncMuted() {
-    bgmMuted = V8.storage.getBgmMuted();
+  function setMuted(value, persist) {
+    bgmMuted = Boolean(value);
+    V8._bgmMuted = bgmMuted;
+    if (persist !== false) V8.storage.setBgmMuted(bgmMuted);
     tracks.forEach(state => { state.audio.muted = bgmMuted; });
+    if (persist !== false && !bgmMuted && !bgmStopped) play();
+    return bgmMuted;
+  }
+
+  function syncMuted() {
+    setMuted(V8.storage.getBgmMuted(), false);
   }
 
   function handleError(state) {
@@ -102,16 +109,6 @@
     return state;
   }
 
-  function warmOtherTracks(currentIndex) {
-    if (warmScheduled) return;
-    warmScheduled = true;
-    const warm = () => TRACKS.forEach((_, index) => {
-      if (index !== currentIndex) ensureTrack(index, true);
-    });
-    if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 1800 });
-    else setTimeout(warm, 900);
-  }
-
   function stopExcept(allowed) {
     tracks.forEach(state => {
       if (allowed.has(state.index)) return;
@@ -148,7 +145,6 @@
     pendingRestore = null;
     const next = ensureTrack(index, true);
     const sameTrack = activeIndex === index;
-    warmOtherTracks(index);
 
     if (restart || !sameTrack) {
       next.audio.pause();
@@ -163,7 +159,6 @@
         state.audio.volume = 0;
       });
       activeIndex = index;
-      warmOtherTracks(index);
       return;
     }
 
@@ -172,7 +167,6 @@
       stopExcept(new Set([index]));
       next.audio.volume = trackVolume(index);
       if (next.audio.paused && !document.hidden) next.audio.play().catch(() => {});
-      warmOtherTracks(index);
       return;
     }
 
@@ -193,7 +187,6 @@
       stopExcept(new Set(previous ? [previous.index, next.index] : [next.index]));
       if (previous) crossfade(previous, next, token);
       else next.audio.volume = trackVolume(index);
-      warmOtherTracks(index);
     }).catch(() => {
       // Autoplay denial or a pending fallback leaves the previous track
       // untouched. A later user action/successful source load retries it.
@@ -249,7 +242,6 @@
     };
     state.audio.addEventListener('loadedmetadata', completePendingRestore, { once: true });
     completePendingRestore();
-    warmOtherTracks(handoff.index);
   }
 
   function validNavigationState(raw) {
@@ -372,11 +364,7 @@
   }
 
   function toggle() {
-    bgmMuted = !bgmMuted;
-    V8.storage.setBgmMuted(bgmMuted);
-    tracks.forEach(state => { state.audio.muted = bgmMuted; });
-    if (!bgmMuted && !bgmStopped) play();
-    return bgmMuted;
+    return setMuted(!bgmMuted);
   }
 
   function isMuted() { return bgmMuted; }
@@ -432,7 +420,7 @@
   document.addEventListener('keydown', unlockPlayback);
 
   V8.bgm = {
-    boot, play, stop, resume, switchTrack, toggle, isMuted, toggleStopped, isStopped,
+    boot, play, stop, resume, switchTrack, toggle, setMuted, isMuted, toggleStopped, isStopped,
     saveNavigationState, prepareNavigation,
     get el() { return activeIndex === null ? null : tracks.get(activeIndex).audio; },
   };

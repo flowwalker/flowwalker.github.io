@@ -107,11 +107,79 @@
     setTimeout(() => f.remove(), 980);
   }
 
-  /** DOM big centered text. */
+  // Central announcements share one lane. Combo, skill, and bonus events can
+  // fire in the same answer callback, so appending every message immediately
+  // made them cover one another at exactly the same coordinates.
+  const BIG_TEXT_DURATION = 1280;
+  const bigTextQueue = [];
+  let activeBigText = null;
+  let bigTextPaused = false;
+  let bigTextGeneration = 0;
+  let bigTextDrainQueued = false;
+
+  function scheduleBigTextDrain() {
+    if (bigTextDrainQueued) return;
+    bigTextDrainQueued = true;
+    const generation = bigTextGeneration;
+    const run = () => {
+      bigTextDrainQueued = false;
+      if (generation !== bigTextGeneration || bigTextPaused || activeBigText || !bigTextQueue.length) return;
+      const item = bigTextQueue.shift();
+      const node = document.createElement('div');
+      node.className = 'big-text';
+      node.textContent = item.txt;
+      node.style.color = item.col;
+      document.body.appendChild(node);
+      const timer = setTimeout(() => {
+        if (!activeBigText || activeBigText.node !== node) return;
+        node.remove();
+        activeBigText = null;
+        scheduleBigTextDrain();
+      }, BIG_TEXT_DURATION);
+      activeBigText = { item, node, timer };
+    };
+    if (typeof queueMicrotask === 'function') queueMicrotask(run);
+    else Promise.resolve().then(run);
+  }
+
+  /** Queue one centered announcement; only one can occupy the lane at a time. */
   function bigText(txt, col) {
-    const f = document.createElement('div'); f.className = 'big-text'; f.textContent = txt;
-    f.style.color = col; document.body.appendChild(f);
-    setTimeout(() => f.remove(), 1280);
+    bigTextQueue.push({ txt: String(txt), col: col || '#fff' });
+    scheduleBigTextDrain();
+  }
+
+  function pauseBigText() {
+    bigTextPaused = true;
+    if (!activeBigText) return;
+    clearTimeout(activeBigText.timer);
+    activeBigText.node.remove();
+    bigTextQueue.unshift(activeBigText.item);
+    activeBigText = null;
+  }
+
+  function resumeBigText() {
+    bigTextPaused = false;
+    scheduleBigTextDrain();
+  }
+
+  function clearBigText() {
+    bigTextGeneration++;
+    bigTextQueue.length = 0;
+    bigTextDrainQueued = false;
+    if (activeBigText) {
+      clearTimeout(activeBigText.timer);
+      activeBigText.node.remove();
+      activeBigText = null;
+    }
+    bigTextPaused = false;
+  }
+
+  if (V8.bus) {
+    V8.bus.on('world:shift:start', pauseBigText);
+    V8.bus.on('world:shift:end', resumeBigText);
+    // An interrupted shift routes away from the gameplay context; queued
+    // notices from that context should never surface on the next screen.
+    V8.bus.on('world:shift:cancel', clearBigText);
   }
 
   /** Coin fly from brick to score display (DOM animation). */
@@ -336,6 +404,7 @@
   V8.burstFX = burstFX;
   V8.floatText = floatText;
   V8.bigText = bigText;
+  V8.clearBigText = clearBigText;
   V8.coinFlyFX = coinFlyFX;
   V8.scorePopFX = scorePopFX;
   V8.qtFireBurstFX = qtFireBurstFX;

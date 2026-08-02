@@ -101,17 +101,21 @@
             if (sign) sign.classList.remove('skipping');
             gameState.done++;
             skillState.activeSkill = null;
+            // The reveal owns this lock only until the word advances. A world
+            // shift may start synchronously inside advance() and must capture
+            // the unlocked state rather than restoring this stale skip lock.
+            gameState.lock = false;
             const isComplete = V8.words.advance(gameState);
             if (isComplete) {
               V8.ui.updateHUD(gameState);
               V8.ui.showVictory(gameState);
             } else {
-              gameState.lock = false;
               V8.timer.resetWord(gameState);
               V8.words.displayNextWord(gameState);
               V8.ui.updateHUD(gameState);
-              V8.ui.setInputEnabled(true);
-              V8.ui.focusInput();
+              const shifting = Boolean(gameState._worldShiftLock);
+              V8.ui.setInputEnabled(!shifting);
+              if (!shifting) V8.ui.focusInput();
             }
             updateSkillBar();
           }, 2200);

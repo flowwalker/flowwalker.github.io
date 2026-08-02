@@ -19,6 +19,8 @@
   let correctDurations = [];
   let tierOneFired = false;
   let tierTwoFired = false;
+  let generation = 0;
+  let pendingReward = null;
   const effects = new Set();
 
   function callEffect(name) {
@@ -232,9 +234,11 @@
   }
 
   function reset() {
+    generation++;
     correctDurations = [];
     tierOneFired = false;
     tierTwoFired = false;
+    pendingReward = null;
     clearEffects();
   }
 
@@ -254,6 +258,53 @@
     }, 0);
   }
 
+  function triggerTier(tier) {
+    if (tier === 2) triggerVortexDrive();
+    else if (tier === 1) triggerPrismLift();
+  }
+
+  function durationForTier(tier) {
+    return tier === 2 ? VORTEX_DURATION : tier === 1 ? PRISM_DURATION : 0;
+  }
+
+  /**
+   * Mount after the answer callback has finished. The same callback can start
+   * a world shift at word 10, so this short deferral lets the transition claim
+   * the screen first and preserves the reward for a full replay afterwards.
+   */
+  function scheduleReward(tier, gameState) {
+    const runId = gameState.runId;
+    const token = generation;
+    const run = function() {
+      if (token !== generation || activeGameState !== gameState || gameState.runId !== runId ||
+          !gameState.started || gameState.over || gameState.dead) return;
+      if (gameState._worldShiftLock) {
+        pendingReward = { tier, gameState, runId, generation: token };
+        return;
+      }
+      triggerTier(tier);
+    };
+    if (typeof queueMicrotask === 'function') queueMicrotask(run);
+    else Promise.resolve().then(run);
+  }
+
+  function flushPendingReward(payload) {
+    const pending = pendingReward;
+    if (!pending || !payload || payload.gameState !== pending.gameState || payload.runId !== pending.runId) return;
+    pendingReward = null;
+    if (pending.generation !== generation || activeGameState !== pending.gameState ||
+        pending.gameState.runId !== pending.runId || !pending.gameState.started ||
+        pending.gameState.over || pending.gameState.dead || pending.gameState._worldShiftLock) return;
+    triggerTier(pending.tier);
+  }
+
+  function cancelPendingReward(payload) {
+    if (!pendingReward) return;
+    if (!payload || (payload.gameState === pendingReward.gameState && payload.runId === pendingReward.runId)) {
+      pendingReward = null;
+    }
+  }
+
   function recordCorrect(gameState, elapsedSeconds) {
     if (!gameState) return 0;
     if (activeGameState !== gameState) init(gameState);
@@ -271,21 +322,29 @@
       sumLast(TIER_TWO_COUNT) <= TIER_TWO_SECONDS + EPSILON;
     const fiveReady = correctDurations.length >= TIER_ONE_COUNT &&
       sumLast(TIER_ONE_COUNT) <= TIER_ONE_SECONDS + EPSILON;
+    const completesLevel = gameState.done + 1 >= (gameState.words || []).length;
 
     // Tier two wins if both thresholds first become true on the same answer.
     if (!tierTwoFired && tenReady) {
       tierTwoFired = true;
       tierOneFired = true;
-      triggerVortexDrive();
+      if (completesLevel) triggerTier(2);
+      else scheduleReward(2, gameState);
       return 2;
     }
     if (!tierOneFired && fiveReady) {
       tierOneFired = true;
-      triggerPrismLift();
+      if (completesLevel) triggerTier(1);
+      else scheduleReward(1, gameState);
       return 1;
     }
     return 0;
   }
 
-  V8.streak = { init, recordCorrect, reset, cleanup };
+  if (V8.bus) {
+    V8.bus.on('world:shift:end', flushPendingReward);
+    V8.bus.on('world:shift:cancel', cancelPendingReward);
+  }
+
+  V8.streak = { init, recordCorrect, reset, cleanup, durationForTier };
 })(window.V8 = window.V8 || {});

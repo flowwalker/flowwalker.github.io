@@ -64,6 +64,7 @@
       _timerFrozen: false,
       _timerExpired: false,
       _freezeUntil: 0,
+      _cancelFreeze: null,
       // Timer handles
       _charT: null, _dustT: null, _ufoT: null, _ambT: null, _canT: null, _critT: null,
     };
@@ -88,6 +89,35 @@
     }, ms);
   }
 
+  /** Stop gameplay schedulers while preserving runId for result animations. */
+  V8._stopRunLoops = function(gameState, options) {
+    const state = gameState || GS;
+    if (!state || V8._gameState !== state) return false;
+    options = options || {};
+
+    clearTimeout(state._charT); clearTimeout(state._dustT);
+    clearTimeout(state._ufoT); clearTimeout(state._ambT);
+    clearTimeout(state._canT); clearTimeout(state._critT);
+    clearTimeout(state._readyGoT); clearTimeout(state._readyDoneT);
+    state._charT = state._dustT = state._ufoT = state._ambT = state._canT = state._critT = null;
+    state._readyGoT = state._readyDoneT = null;
+    if (typeof state._cancelFreeze === 'function') state._cancelFreeze();
+    state._cancelFreeze = null;
+
+    if (V8.timer) V8.timer.stop();
+    if (V8.entities) V8.entities.clearAll();
+    if (V8.streak && !options.preserveStreak) V8.streak.cleanup();
+    const R = V8.render && V8.render.R;
+    if (R) {
+      (R.cans || []).forEach(item => item.el && item.el.remove());
+      (R.critters || []).forEach(item => item.el && item.el.remove());
+      R.cans = []; R.critters = [];
+    }
+    document.querySelectorAll('.ufo,.beam,.cow,.can,.critter').forEach(node => node.remove());
+    if (V8.ui && V8.ui.setInputEnabled) V8.ui.setInputEnabled(false);
+    return true;
+  };
+
   /** Stop a run without showing an answer/death screen before routing home. */
   V8._prepareQuit = function(gameState) {
     const state = gameState || GS;
@@ -101,25 +131,9 @@
     state.slowmo = false;
     state._timerFrozen = false;
     state._freezeUntil = 0;
+    V8._stopRunLoops(state);
     // Invalidate all callbacks that captured the old token.
     state.runId = 'aborted-' + Date.now() + '-' + Math.random();
-
-    clearTimeout(state._charT); clearTimeout(state._dustT);
-    clearTimeout(state._ufoT); clearTimeout(state._ambT);
-    clearTimeout(state._canT); clearTimeout(state._critT);
-    clearTimeout(state._readyGoT); clearTimeout(state._readyDoneT);
-    state._charT = state._dustT = state._ufoT = state._ambT = state._canT = state._critT = null;
-    state._readyGoT = state._readyDoneT = null;
-
-    if (V8.timer) V8.timer.stop();
-    if (V8.entities) V8.entities.clearAll();
-    if (V8.streak) V8.streak.cleanup();
-    const R = V8.render && V8.render.R;
-    if (R) {
-      (R.cans || []).forEach(item => item.el && item.el.remove());
-      (R.critters || []).forEach(item => item.el && item.el.remove());
-      R.cans = []; R.critters = [];
-    }
     if (V8.ui && V8.ui.setInputEnabled) V8.ui.setInputEnabled(false);
     return true;
   };
@@ -141,8 +155,8 @@
   // ── Boot ───────────────────────────────────────────────
   function boot() {
     const pack = V8.WORD_PACK;
-    document.title = '⭐ CET-6 单词跑酷 v11 · ' + pack.title;
-    $('startSub').textContent = `CET-6 · ${pack.title} · ${pack.words.length} 词 · 每关 ${WORDS_PER_LEVEL} 词`;
+    document.title = '⭐ CET-6 单词跑酷 v13 · ' + pack.title;
+    $('startSub').textContent = `${pack.title} · ${pack.words.length} 词 · 每关 ${WORDS_PER_LEVEL} 词`;
     V8.render.boot();
     V8.player.setChar('A');
     GS.muted = V8.storage.getSfxMuted();
@@ -286,6 +300,10 @@
 
       // Pet update
       V8.pet.update(GS, $('char'));
+    } else if (GS.started && GS.over) {
+      // Result screens freeze world simulation but keep impact particles,
+      // rings, and fireworks alive until their own lifetimes expire.
+      V8.render.updateEffects(t, dt, k);
     }
 
     V8.render.drawBG(t);
@@ -319,7 +337,7 @@
     const run = GS;
     const elapsedSeconds = V8.timer.elapsedForWord(run);
     V8.combo.onCorrect(run);
-    V8.streak.recordCorrect(run, elapsedSeconds);
+    const streakTier = V8.streak.recordCorrect(run, elapsedSeconds);
     run.done++;
 
     // Score
@@ -387,11 +405,11 @@
     // Advance
     const isComplete = V8.words.advance(run);
     if (isComplete) {
-      V8.ui.showVictory(run);
+      V8.ui.showVictory(run, { streakTier });
     } else {
       V8.timer.resetWord(run);
       V8.words.displayNextWord(run);
-      V8.ui.focusInput();
+      if (!run._worldShiftLock) V8.ui.focusInput();
     }
     V8.ui.updateHUD(run);
   }
@@ -399,6 +417,7 @@
   function onWrongAnswer(word) {
     V8.combo.onWrong(GS);
     if (V8.streak) V8.streak.reset();
+    V8.ui.updateSpeed(GS);
 
     // Check HP
     const alive = V8.hp.takeDamage(GS);
@@ -426,6 +445,7 @@
     V8.brick.danger();
     $('vgnDanger').classList.remove('on', 'max');
     V8.ui.setInputEnabled(false);
+    V8._stopRunLoops(run);
 
     if (reason === 'time') V8.player.deathTimeout(run, $('char'));
     else if (reason === 'giveup') V8.player.deathWrong(run, $('char'));
@@ -447,6 +467,7 @@
     if (!GS.started || GS.over || GS.dead || GS.lock || GS.rdy) return;
     V8.combo.onWrong(GS);
     if (V8.streak) V8.streak.reset();
+    V8.ui.updateSpeed(GS);
     GS.mistakes++;
     V8.bigText('本词暂时不会', '#ffd36a');
     finishRun(V8.words.currentWord(GS), 'giveup');
